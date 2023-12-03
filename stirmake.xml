@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<book xml:id="stirmake" xmlns="http://docbook.org/ns/docbook" version="5.0">
+  <info>
+    <title>Scalable true implementation of recursive make (stirmake)</title>
+    <author>
+      <personname>
+        <firstname>Juha-Matti</firstname>
+        <surname>Tilli</surname>
+      </personname>
+    </author>
+    <copyright>
+      <year>2023-2024</year>
+      <holder>Juha-Matti Tilli</holder>
+    </copyright>
+  </info>
+  <chapter xml:id="make">
+    <title>Make, the de facto build tool</title>
+    <!-- C includes and what is needed to make them work -->
+  </chapter>
+  <chapter xml:id="makemultidirproject">
+    <title>Where make fails, multi-directory projects</title>
+    <sect1 xml:id="makedirsep">
+      <title>Make with directory separators</title>
+      <!-- cc invoked in top-level directory, creates its outputs there -->
+      <!-- option -o needed to tell to store output to subdirectory -->
+    </sect1>
+    <sect1 xml:id="makefileperdir">
+      <title>Another approach: Makefile per directory</title>
+      <sect2 xml:id="recursivemaketest">
+        <title>Let's try recursive make</title>
+      </sect2>
+      <sect2 xml:id="nocommonnamespace">
+        <title>Fixing no common namespace: include file</title>
+      </sect2>
+      <sect2 xml:id="dangersofseparating">
+        <title>Drawbacks and dangers of separating build to multiple DAGs</title>
+        <!-- top-level directory must have module-level dependencies -->
+        <!-- parallel build hard: explain the jobserver hack -->
+        <!-- "Recursive Make Considered Harmful" -->
+        <!-- so let's try another approach, inclusive make -->
+      </sect2>
+    </sect1>
+    <sect1 xml:id="inclusivemake">
+      <title>Another approach: one Makefile, module.mk per directory</title>
+      <!-- refer to makedirsep: commands are executed in subdirectory -->
+      <!-- one common namespace -->
+      <!-- dangers of one common namespace when including sub-projects: this is where even die-hard inclusive make proponents switch to recursion -->
+    </sect1>
+  </chapter>
+  <chapter xml:id="stirmakeintro">
+    <title>Introducing stirmake</title>
+    <sect1 xml:id="helloworld">
+      <title>Compiling hello world</title>
+      <!-- document phony rules here -->
+      <!-- strict mode, in non-strict mode 4/2 is not equal to 2 -->
+    </sect1>
+    <sect1 xml:id="modularhellolib">
+      <title>Modular hello from library</title>
+      <!-- demonstrate nested recursive scoping here -->
+      <!-- invoking stirmake: smka, (smkp), smkt -->
+    </sect1>
+  </chapter>
+  <chapter xml:id="variabledatatypefunction">
+    <title>Variables, data types and functions</title>
+    <sect1 xml:id="dump">
+      <title>Dump: hello from stirmake</title>
+    </sect1>
+    <sect1 xml:id="variables">
+      <title>Defining variables</title>
+    </sect1>
+    <sect1 xml:id="specvar">
+      <title>Special variables</title>
+    </sect1>
+    <sect1 xml:id="datatypes">
+      <title>Data types, finally we can have spaces in filenames!</title>
+    </sect1>
+    <sect1 xml:id="string">
+      <title>String</title>
+      <!-- common operations -->
+    </sect1>
+    <sect1 xml:id="array">
+      <title>Array</title>
+      <!-- common operations -->
+    </sect1>
+    <sect1 xml:id="simpletypes">
+      <title>Simple data types: number, boolean, nil</title>
+      <!-- common operations -->
+    </sect1>
+    <sect1 xml:id="tree">
+      <title>Tree</title>
+      <!-- common operations -->
+    </sect1>
+    <sect1 xml:id="functiondelayeval">
+      <title>Functions and delayed evaluation</title>
+    </sect1>
+  </chapter>
+  <chapter xml:id="commands">
+    <title>How Stirmake executes its commands</title>
+    <!-- tab, at-tab, at-at-tab -->
+    <!-- the dangers of shell expansion -->
+    <!-- shell can still be manually invoked -->
+    <!-- build command database -->
+    <!-- ignore -->
+    <!-- noecho -->
+    <!-- ismake and automatic make detection -->
+  </chapter>
+  <chapter xml:id="cleaning">
+    <title>Automated cleaning with stirmake</title>
+    <!-- distrule and disttgt -->
+  </chapter>
+  <chapter xml:id="conditional">
+    <title>Conditional compilation</title>
+  </chapter>
+  <chapter xml:id="multiproject">
+    <title>Stirmake for entire project structures</title>
+    <!-- including sub-projects -->
+    <!-- invoking stirmake: smka, smkp, smkt -->
+    <!-- controlling what to export with holey scopes -->
+  </chapter>
+  <chapter xml:id="oneprojectatatime">
+    <title>Make revolution, one project at a time</title>
+    <!-- Not everyone uses stirmake yet -->
+    <!-- integration to jobserver and make autodetection -->
+    <!-- backtick-equals, backtick-backtick-equals -->
+    <!-- integration to subproject cleaning systems with clean hooks -->
+    <!-- recdep and detouchrule/rectgtrule/mayberule -->
+    <!-- make in same directory with mayberule -->
+  </chapter>
+  <chapter xml:id="scopingandsubdirectories">
+    <title>Scoping and subdirectories</title>
+    <!-- lexical vs dynamic: we support both -->
+    <!-- holey scopes -->
+    <!-- named scopes -->
+    <sect1 xml:id="dirupdirdown">
+      <title>Specifying library lists that work everywhere</title>
+      <!-- introduce problem of specifying static dependencies -->
+      <!-- @dirdown @dirup -->
+    </sect1>
+  </chapter>
+  <chapter xml:id="programmingwithamyplan">
+    <title>Programming Stirmake with Amyplan</title>
+    <!-- abce and amyplan -->
+    <!-- creating amyplan scripts -->
+  </chapter>
+  <chapter xml:id="advancedtricks">
+    <title>Advanced tricks</title>
+    <!-- pattern rules -->
+    <!-- deponly for additional dependencies -->
+    <!-- @order and @wait -->
+    <!-- dynamically adding rules -->
+    <!-- dynamically adding dependencies -->
+  </chapter>
+</book>

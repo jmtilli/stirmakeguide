@@ -1,0 +1,5 @@
+@toplevel
+@strict
+
+'stirmake.html': 'stirmake.xml'
+@	["xsltproc", "-o", "stirmake.html", "/usr/share/xml/docbook/stylesheet/nwalsh/xhtml/docbook.xsl", "stirmake.xml"]
