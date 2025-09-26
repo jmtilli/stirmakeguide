@@ -13,6 +13,8 @@
       <holder>Juha-Matti Tilli</holder>
     </copyright>
   </info>
+  <part xml:id="part_make">
+  <title>Make, a historical tool</title>
   <chapter xml:id="make">
     <title>Make, the de facto build tool</title>
     <!-- C includes and what is needed to make them work -->
@@ -46,7 +48,13 @@
       <!-- one common namespace -->
       <!-- dangers of one common namespace when including sub-projects: this is where even die-hard inclusive make proponents switch to recursion -->
     </sect1>
+    <sect1 xml:id="parallelmake">
+      <title>Parallel make, jobserver and lack of multiple targets</title>
+    </sect1>
   </chapter>
+  </part>
+  <part xml:id="part_stirmakeintro">
+  <title>Stirmake, a modern tool</title>
   <chapter xml:id="stirmakeintro">
     <title>Introducing stirmake</title>
     <sect1 xml:id="stirmakeinstall">
@@ -133,6 +141,9 @@
   <chapter xml:id="conditional">
     <title>Conditional compilation</title>
   </chapter>
+  </part>
+  <part xml:id="part_stirmakelargescale">
+  <title>Stirmake in large-scale systems</title>
   <chapter xml:id="multiproject">
     <title>Stirmake for entire project structures</title>
     <!-- including sub-projects -->
@@ -163,6 +174,9 @@
       <!-- @dirdown @dirup -->
     </sect1>
   </chapter>
+  </part>
+  <part xml:id="part_advancedprogramming">
+  <title>Advanced stirmake programming</title>
   <chapter xml:id="programmingwithamyplan">
     <title>Programming Stirmake with Amyplan</title>
     <!-- abce and amyplan -->
@@ -184,4 +198,5 @@
     <!-- finding gitmake version and version history -->
     <!-- hacking abce: need for all to be visible to abce at all times -->
   </chapter>
+  </part>
 </book>
