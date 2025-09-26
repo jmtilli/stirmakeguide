@@ -63,7 +63,7 @@
       <!-- demonstrate nested recursive scoping here -->
       <!-- invoking stirmake: smka, (smkp), smkt -->
     </sect1>
-    <sect1 xml:id="modularhellolib">
+    <sect1 xml:id="multiprocessing">
       <title>Multiprocessor machines</title>
       <!-- -ja, -la, etc -->
       <!-- need to specify all targets if there are multiple -->
