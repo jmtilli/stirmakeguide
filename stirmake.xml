@@ -49,6 +49,10 @@
   </chapter>
   <chapter xml:id="stirmakeintro">
     <title>Introducing stirmake</title>
+    <sect1 xml:id="stirmakeinstall">
+      <title>Compiling and installing stirmake</title>
+      <!-- flex, byacc, POSIX, some non-POSIX or deprecated fn requirements -->
+    </sect1>
     <sect1 xml:id="helloworld">
       <title>Compiling hello world</title>
       <!-- document phony rules here -->
@@ -58,6 +62,17 @@
       <title>Modular hello from library</title>
       <!-- demonstrate nested recursive scoping here -->
       <!-- invoking stirmake: smka, (smkp), smkt -->
+    </sect1>
+    <sect1 xml:id="modularhellolib">
+      <title>Multiprocessor machines</title>
+      <!-- -ja, -la, etc -->
+      <!-- need to specify all targets if there are multiple -->
+      <!-- make does not support specifying all targets -->
+    </sect1>
+    <sect1 xml:id="tracingdebugging">
+      <title>Tracing and debugging</title>
+      <!-- tracing -->
+      <!-- debugging -->
     </sect1>
   </chapter>
   <chapter xml:id="variabledatatypefunction">
@@ -81,6 +96,7 @@
     <sect1 xml:id="array">
       <title>Array</title>
       <!-- common operations -->
+      <!-- array append assignment top-level only -->
     </sect1>
     <sect1 xml:id="simpletypes">
       <title>Simple data types: number, boolean, nil</title>
@@ -93,13 +109,19 @@
     <sect1 xml:id="functiondelayeval">
       <title>Functions and delayed evaluation</title>
     </sect1>
+    <sect1 xml:id="functionglobalscope">
+      <title>Functions, global variables and scoping</title>
+      <!-- calling one function from another function -->
+      <!-- difference between functions and built-ins -->
+    </sect1>
   </chapter>
   <chapter xml:id="commands">
     <title>How Stirmake executes its commands</title>
     <!-- tab, at-tab, at-at-tab -->
     <!-- the dangers of shell expansion -->
     <!-- shell can still be manually invoked -->
-    <!-- build command database -->
+    <!-- build command and file size database -->
+    <!-- move madness -->
     <!-- ignore -->
     <!-- noecho -->
     <!-- ismake and automatic make detection -->
@@ -122,6 +144,10 @@
     <!-- Not everyone uses stirmake yet -->
     <!-- integration to jobserver and make autodetection -->
     <!-- backtick-equals, backtick-backtick-equals -->
+    <!-- chomp -->
+    <!-- getenv -->
+    <!-- strwordlist -->
+    <!-- recommendation for CC and CFLAGS support, both list of lists -->
     <!-- integration to subproject cleaning systems with clean hooks -->
     <!-- recdep and detouchrule/rectgtrule/mayberule -->
     <!-- make in same directory with mayberule -->
@@ -141,6 +167,11 @@
     <title>Programming Stirmake with Amyplan</title>
     <!-- abce and amyplan -->
     <!-- creating amyplan scripts -->
+    <!-- lack of REPL due to being yacc-based -->
+    <!-- constant strings and modifiable packet buffers -->
+    <!-- TODO: memcpy with packet buffers, needs abce support -->
+    <!-- io streams and interacting with them -->
+    <!-- JSON -->
   </chapter>
   <chapter xml:id="advancedtricks">
     <title>Advanced tricks</title>
@@ -149,5 +180,8 @@
     <!-- @order and @wait -->
     <!-- dynamically adding rules -->
     <!-- dynamically adding dependencies -->
+    <!-- version conditionals and minimum version requirements, future b-ins -->
+    <!-- finding gitmake version and version history -->
+    <!-- hacking abce: need for all to be visible to abce at all times -->
   </chapter>
 </book>
