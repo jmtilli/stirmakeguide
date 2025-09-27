@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- vim: set noai indentexpr&
+-->
 <book xml:id="stirmake" xmlns="http://docbook.org/ns/docbook" version="5.0">
   <info>
     <title>Scalable true implementation of recursive make (stirmake)</title>
@@ -17,6 +19,96 @@
   <title>Make, a historical tool</title>
   <chapter xml:id="make">
     <title>Make, the de facto build tool</title>
+
+The first and most well-known build tool is make. Stuart Feldman authored make
+in 1976 in Bell Labs. The idea of make is that while build can be done using a
+shell script, a shell script executes all build commands uncondionally. In a
+small project consisting of a single C language source file, this is not a
+problem. However, larger projects can consist of multiple C source files, for
+example Linux 6.17-rc7 contains 35778 source files, not counting header files.
+If in a large project a small change is made, it should affect only on the code
+that is dependent on it. For example, if a C source file is changed, only that
+source file should be recompiled and any .a archive, shared library or
+executable binary dependent on it should be re-linked.
+
+A simple Makefile could be as follows:
+<programlisting>
+.PHONY: all
+all: myprog
+CC=cc
+CFLAGS=-O1
+myprog: myprog.c
+	$(CC) $(CFLAGS) -o $@ $^
+</programlisting>
+
+Here $@ refers to the target name, wheras $^ contains all dependencies. Instead of $^, the first dependency can be referred to with $&lt;.
+
+In this case, myprog is re-built only if nonexistent, or if its timestamp is
+before the modification timestamp of myprog.c.
+
+A problem immediately appears. The file myprog does not depend on Makefile.
+So if CFLAGS is modified, myprog won't be rebuilt. The answer to this generally
+is two-fold.
+
+Firstly, a target clean is added to clean everything:
+<programlisting>
+.PHONY: all
+all: myprog
+CC=cc
+CFLAGS=-O1
+clean:
+	rm -f myprog
+myprog: myprog.c
+	$(CC) $(CFLAGS) -o $@ $^
+</programlisting>
+
+Then if CFLAGS is modified, the user can run "make clean" and then "make". This
+demonstrates that the all-important "make clean" must be executed very often
+with make-based build systems. This also demonstrates that it's all too easy to
+forget something from "make clean". For example, in this simple Makefile, if a
+new target secondprog is added, it needs to be added to its rule, but also to
+"make clean" rule which is often forgotten.
+
+Another possibility is adding dependency to Makefile, but this requires some
+changes so that it's not given to CC as an argument:
+<programlisting>
+.PHONY: all
+all: myprog
+CC=cc
+CFLAGS=-O1
+clean:
+	rm -f myprog
+myprog: myprog.c Makefile
+	$(CC) $(CFLAGS) -o $@ $(filter %.c,$^)
+</programlisting>
+
+Note that filter is a GNU make extension, and may not be available in other
+implementations of make.
+
+However, with both approaches, the "solution" is to clean or re-build
+everything if the Makefile is changed. This is a problem in cases where the
+Makefile is huge, but only one command to build one target is modified. Both
+"solutions" in this case recompile everything, not just the target that had
+a change in its command.
+
+In larger projects, it is generally preferred to not compile binary from C
+sources directly, but instead create object files that are then linked:
+<programlisting>
+.PHONY: all
+all: myprog
+CC=cc
+CFLAGS=-O1
+clean:
+	rm -f myprog
+	rm -f myprog.o mylibo
+myprog: myprog.o mylib.o Makefile
+	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^)
+myprog.o: myprog.c Makefile
+	$(CC) $(CFLAGS) -c -o $@ $&lt;
+mylib.o: mylib.c Makefile
+	$(CC) $(CFLAGS) -c -o $@ $&lt;
+</programlisting>
+
     <!-- C includes and what is needed to make them work -->
   </chapter>
   <chapter xml:id="makemultidirproject">
