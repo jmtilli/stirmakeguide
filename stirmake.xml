@@ -337,14 +337,31 @@ difficulties in the road to make the ultimate dependency file mechanism.
     </sect1>
     <sect1 xml:id="datatypes">
       <title>Data types, finally we can have spaces in filenames!</title>
+      <!-- @type, @nil -->
+    </sect1>
+    <sect1 xml:id="conditionals">
+      <!-- normal conditionals -->
+      <!-- stirmake version conditional -->
+    </sect1>
+    <sect1 xml:id="loops">
+      <!-- while, for, once, break, continue, break N, continue N -->
     </sect1>
     <sect1 xml:id="string">
       <title>String</title>
       <!-- common operations -->
+      <!-- chomp -->
+      <!-- strstr, strrep, strlistjoin, strappend, strstrip -->
+      <!-- strsub, strgsub, strset, strword, strwordcnt, strwordlist -->
+      <!-- strcmp, strreverse, strupper, strlower, strfromchr -->
+      <!-- string append -->
+      <!-- tostring, tonumber -->
     </sect1>
     <sect1 xml:id="array">
       <title>Array</title>
       <!-- common operations -->
+      <!-- list splice -->
+      <!-- append -->
+      <!-- appendlist -->
       <!-- array append assignment top-level only -->
     </sect1>
     <sect1 xml:id="simpletypes">
@@ -354,6 +371,7 @@ difficulties in the road to make the ultimate dependency file mechanism.
     <sect1 xml:id="tree">
       <title>Tree</title>
       <!-- common operations -->
+      <!-- fordict, fordictprev, dictprev, dictnext -->
     </sect1>
     <sect1 xml:id="functiondelayeval">
       <title>Functions and delayed evaluation</title>
@@ -423,14 +441,18 @@ difficulties in the road to make the ultimate dependency file mechanism.
     <!-- abce and amyplan -->
     <!-- creating amyplan scripts -->
     <!-- lack of REPL due to being yacc-based -->
-    <!-- constant strings and modifiable packet buffers -->
+    <!-- constant strings and modifiable packet buffers, @str2pb, @pb2str -->
+    <!-- pbnew -->
+    <!-- packet buffer access with be8, le8, be16, be32, le16, le32 -->
     <!-- TODO: memcpy with packet buffers, needs abce support -->
     <!-- io streams and interacting with them -->
+    <!-- math, fpclassify -->
     <!-- JSON -->
   </chapter>
   <chapter xml:id="advancedtricks">
     <title>Advanced tricks</title>
-    <!-- pattern rules -->
+    <!-- pattern rules, TODO perhaps earlier? -->
+    <!-- scopes stored in variables -->
     <!-- deponly for additional dependencies -->
     <!-- @order and @wait -->
     <!-- dynamically adding rules -->
