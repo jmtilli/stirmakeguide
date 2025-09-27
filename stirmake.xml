@@ -20,6 +20,9 @@
   <chapter xml:id="make">
     <title>Make, the de facto build tool</title>
 
+<sect1 xml:id="basics">
+<title>Introduction to basics of make</title>
+
 The first and most well-known build tool is make. Stuart Feldman authored make
 in 1976 in Bell Labs. The idea of make is that while build can be done using a
 shell script, a shell script executes all build commands uncondionally. In a
@@ -46,13 +49,17 @@ Here $@ refers to the target name, wheras $^ contains all dependencies. Instead 
 In this case, myprog is re-built only if nonexistent, or if its timestamp is
 before the modification timestamp of myprog.c.
 
+</sect1>
+<sect1 xml:id="cleanandmakefiledep">
+<title>Cleaning and dependency on Makefile</title>
+
 A problem immediately appears. The file myprog does not depend on Makefile.
 So if CFLAGS is modified, myprog won't be rebuilt. The answer to this generally
 is two-fold.
 
 Firstly, a target clean is added to clean everything:
 <programlisting>
-.PHONY: all
+.PHONY: all clean
 all: myprog
 CC=cc
 CFLAGS=-O1
@@ -72,7 +79,7 @@ new target secondprog is added, it needs to be added to its rule, but also to
 Another possibility is adding dependency to Makefile, but this requires some
 changes so that it's not given to CC as an argument:
 <programlisting>
-.PHONY: all
+.PHONY: all clean
 all: myprog
 CC=cc
 CFLAGS=-O1
@@ -91,16 +98,19 @@ Makefile is huge, but only one command to build one target is modified. Both
 "solutions" in this case recompile everything, not just the target that had
 a change in its command.
 
+</sect1>
+<sect1 xml:id="largerprojects">
+<title>Somewhat larger single-directory projects</title>
 In larger projects, it is generally preferred to not compile binary from C
 sources directly, but instead create object files that are then linked:
 <programlisting>
-.PHONY: all
+.PHONY: all clean
 all: myprog
 CC=cc
 CFLAGS=-O1
 clean:
 	rm -f myprog
-	rm -f myprog.o mylibo
+	rm -f myprog.o mylib.o
 myprog: myprog.o mylib.o Makefile
 	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^)
 myprog.o: myprog.c Makefile
@@ -109,7 +119,146 @@ mylib.o: mylib.c Makefile
 	$(CC) $(CFLAGS) -c -o $@ $&lt;
 </programlisting>
 
-    <!-- C includes and what is needed to make them work -->
+Now there are two unclean approaches in this Makefile. First is that the
+information about what object files are there is repeated to three locations:
+the rule of the object file, the linking rule, and the "make clean" phony rule.
+The second is that if there are N object files, the command to build them is
+repeated N times. These can be solved with some GNU make extensions:
+
+<programlisting>
+.PHONY: all clean
+all: myprog
+CC=cc
+CFLAGS=-O1
+OBJS=myprog.o mylib.o
+clean:
+	rm -f myprog
+	rm -f $(OBJS)
+myprog: $(OBJS) Makefile
+	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^)
+$(OBJS): %.o: %.c Makefile
+	$(CC) $(CFLAGS) -c -o $@ $&lt;
+</programlisting>
+
+Now the list of object files is specified only once, and the rule to build an
+object from a source is common to all object files. Note that already at this
+stage, the standard POSIX make is not enough, an GNU extensions have to be
+used.
+
+</sect1>
+<sect1 xml:id="headerfile">
+<title>Header file dependencies</title>
+
+However, this more complex Makefile suffers from the fact that compiling
+myprog.c into myprog.o most likely requires inclusion of a header file,
+mylib.h. So myprog.o depends on mylib.h. This can be specified as an additional
+dependency in the Makefile:
+
+<programlisting>
+.PHONY: all clean
+all: myprog
+CC=cc
+CFLAGS=-O1
+OBJS=myprog.o mylib.o
+clean:
+	rm -f myprog
+	rm -f $(OBJS)
+myprog: $(OBJS) Makefile
+	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^)
+$(OBJS): %.o: %.c Makefile
+	$(CC) $(CFLAGS) -c -o $@ $&lt;
+myprog.o: mylib.h
+</programlisting>
+
+But however, this approach does not scale. Every time a C file is modified and
+a new header file is added, it must be documented in the Makefile. Worse, a
+header file can include other headers, and all of them should be documented
+in the Makefile. Clearly, something better is needed.
+
+Fortunately, most C compilers support outputting dependencies, which can be
+imported:
+
+<programlisting>
+.PHONY: all clean
+all: myprog
+CC=cc
+CFLAGS=-O1
+OBJS=myprog.o mylib.o
+DEPS=$(patsubst %.o,%.d,$(OBJS))
+clean:
+	rm -f myprog
+	rm -f $(OBJS)
+myprog: $(OBJS) Makefile
+	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^)
+$(OBJS): %.o: %.c %.d Makefile
+	$(CC) $(CFLAGS) -c -o $@ $&lt;
+$(DEPS): %.d: %.c Makefile
+	$(CC) $(CFLAGS) -MM -o $@ $&lt;
+-include $(DEPS)
+</programlisting>
+
+So the C compiler then creates the files myprog.d mylib.d that both myprog.o
+and mylib.o depend on mylib.h. This is fully automatic. Before a build has been
+made, the .d dependency files don't exist, but then everything must be
+initially compiled anyway. In this case, -MM means omit system header files.
+With -M only, system header file dependencies would be stored in the .d files.
+
+Also notice that instead of include, you use -include. This is because the
+dependency files don't exist the first time make is run.
+
+Is the Makefile now good enough? No, because if mylib.h is renamed to
+mylibpublic.h, then the .d files contain reference to the old mylib.h and make
+notices it can't find that file. So an empty phony rule is needed to affect
+make in such a manner that it doesn't exit when finding a reference to a
+nonexistent header file. Fortunately, the -M option has -MP which adds the
+phony rules and now "make clean" is not necessary if a header is renamed:
+
+<programlisting>
+.PHONY: all clean
+all: myprog
+CC=cc
+CFLAGS=-O1
+OBJS=myprog.o mylib.o
+DEPS=$(patsubst %.o,%.d,$(OBJS))
+clean:
+	rm -f myprog
+	rm -f $(OBJS)
+myprog: $(OBJS) Makefile
+	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^)
+$(OBJS): %.o: %.c %.d Makefile
+	$(CC) $(CFLAGS) -c -o $@ $&lt;
+$(DEPS): %.d: %.c Makefile
+	$(CC) $(CFLAGS) -MM -MP -o $@ $&lt;
+-include $(DEPS)
+</programlisting>
+
+However, this is not all that needs to be done. The .d files aren't updated
+if a header file changes, only the .o files are updated. Fortunately, most
+C compilers have an option to solve this: -MT:
+
+<programlisting>
+.PHONY: all clean
+all: myprog
+CC=cc
+CFLAGS=-O1
+OBJS=myprog.o mylib.o
+DEPS=$(patsubst %.o,%.d,$(OBJS))
+clean:
+	rm -f myprog
+	rm -f $(OBJS)
+myprog: $(OBJS) Makefile
+	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^)
+$(OBJS): %.o: %.c %.d Makefile
+	$(CC) $(CFLAGS) -c -o $@ $&lt;
+$(DEPS): %.d: %.c Makefile
+	$(CC) $(CFLAGS) -MM -MP -MT $*.d -MT $*.o -o $@ $&lt;
+-include $(DEPS)
+</programlisting>
+
+Now the .d files finally work just fine. However, there were a lot of
+difficulties in the road to make the ultimate dependency file mechanism.
+</sect1>
+
   </chapter>
   <chapter xml:id="makemultidirproject">
     <title>Where make fails, multi-directory projects</title>
