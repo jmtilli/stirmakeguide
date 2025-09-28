@@ -346,7 +346,7 @@ grow into a huge monster which makes its maintenance practically impossible.
       <!-- demonstrate nested recursive scoping here -->
       <!-- invoking stirmake: smka, (smkp), smkt -->
     </sect1>
-    <sect1 xml:id="tracingdebugging">
+    <sect1 xml:id="environmentandconf">
       <title>Environment and configuration commands</title>
       <!-- getenv, chomp, strwordlist, shell-assign, shell-shell-assign -->
       <!-- $PYTHON_CFLAGS ``= ["python3-config", "-"."-includes"] -->
