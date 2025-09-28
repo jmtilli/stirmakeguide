@@ -1888,6 +1888,7 @@ some other base than e.
     <!-- ignore -->
     <!-- noecho -->
     <!-- ismake and automatic make detection -->
+    <!-- @glob and dangers of @glob in the middle of many commands -->
   </chapter>
   <chapter xml:id="cleaning">
     <title>Automated cleaning with stirmake</title>
