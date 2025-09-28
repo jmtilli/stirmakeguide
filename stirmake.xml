@@ -1563,7 +1563,169 @@ used here, so the version number is a SHA-1 hash.
     </sect1>
     <sect1 xml:id="loops">
       <title>Loops</title>
-      <!-- while, for, once, break, continue, break N, continue N -->
+
+<para>
+
+Stirmake supports two kinds of loops: standard loops and tree loops. We begin
+by explaining standard loops. Tree loops will be explained when
+<link linkend="tree">trees are introduced</link>.
+
+</para><para>
+
+The basic loop is @while. It executes its body as long as the condition
+is true. An example:
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+@function $ANGLE($angle)
+  @while($angle&lt;0)
+    $angle = $angle + 360
+  @endwhile
+  @return $angle
+@endfunction
+@call @dump($ANGLE(-405))
+</programlisting>
+...this function returns 315 for the argument -405.
+
+</para><para>
+
+Another loop, @once, for error handling may be useful:
+
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+@function $ERRSTATUS1()
+  @dump("ERRSTATUS1 called")
+  @return @true
+@endfunction
+@function $ERRSTATUS2()
+  @dump("ERRSTATUS2 called")
+  @return @false
+@endfunction
+@function $ERRSTATUS3()
+  @dump("ERRSTATUS3 called")
+  @return @true
+@endfunction
+@function $COMBINED()
+  @locvar $ok = @true
+  @once
+    $ok = @L$ERRSTATUS1()
+    @if(!$ok)
+      @break
+    @endif
+    $ok = @L$ERRSTATUS2()
+    @if(!$ok)
+      @break
+    @endif
+    $ok = @L$ERRSTATUS3()
+    @if(!$ok)
+      @break
+    @endif
+  @endonce
+  @return $ok
+@endfunction
+@call @dump($COMBINED())
+</programlisting>
+...note how here the elegant @break inside @once allows emulating goto used in
+C language for error handling, without the ugliness of an arbitrary goto. If
+only @break is used, @once is not a loop. However, it is possible to modify it
+to be an actual infinite loop with @continue:
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+@function $ERRSTATUS1()
+  @dump("ERRSTATUS1 called")
+  @return @true
+@endfunction
+@function $ERRSTATUS2()
+  @dump("ERRSTATUS2 called")
+  @return @false
+@endfunction
+@function $ERRSTATUS3()
+  @dump("ERRSTATUS3 called")
+  @return @true
+@endfunction
+@function $COMBINED()
+  @locvar $ok = @true
+  @once
+    $ok = @L$ERRSTATUS1()
+    @if(!$ok)
+      @break
+    @endif
+    $ok = @L$ERRSTATUS2()
+    @if(!$ok)
+      @continue
+    @endif
+    $ok = @L$ERRSTATUS3()
+    @if(!$ok)
+      @break
+    @endif
+  @endonce
+  @return $ok
+@endfunction
+@call @dump($COMBINED())
+</programlisting>
+...now the program alternately prints:
+<programlisting>
+"ERRSTATUS1 called"
+"ERRSTATUS2 called"
+"ERRSTATUS1 called"
+"ERRSTATUS2 called"
+...
+</programlisting>
+
+</para><para>
+
+Where @continue inside @once is useful, is operations that need retrying. For
+example, if a system can encounter deadlocks, the proper way to handle them is
+random exponential back-off, and @once with @continue is the natural construct
+to implement the random exponential back-off.
+
+</para><para>
+
+Of course, the standard @for is supported as well:
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+@function $DUMPALL($array)
+  @locvar $i = @nil
+  @for($i = 0, $i &lt; $array[], $i=$i+1)
+    @dump($array[$i])
+  @endfor
+@endfunction
+@call $DUMPALL([1, "2", 3.5, @false, @nil])
+</programlisting>
+
+</para><para>
+
+And if you want to break outside of a loop not the innermost, @break (and
+@continue) take an integer argument:
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+@function $DUMPALL($array)
+  @locvar $i = @nil
+  @locvar $j = @nil
+  @for($i = 0, $i &lt; $array[], $i=$i+1)
+    @for($j = 0, $j &lt; 10, $j=$j+1)
+      @dump($j)
+      @dump($array[$i])
+      @if($i == 2 &amp;&amp; $j == 2)
+        @break 2
+      @endif
+    @endfor
+  @endfor
+@endfunction
+@call $DUMPALL([1, "2", 3.5, @false, @nil])
+</programlisting>
+...here the argument 2 means "break out of 2 loops".
+
+</para>
     </sect1>
     <sect1 xml:id="string">
       <title>String</title>
