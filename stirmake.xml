@@ -666,9 +666,158 @@ $(CC) = "cc"
     </sect1>
     <sect1 xml:id="modularhellolib">
       <title>Modular hello from library</title>
-      <!-- demonstrate nested recursive scoping here -->
-      <!-- demonstrate @$CFLAGS here to include one array in another -->
-      <!-- invoking stirmake: smka, (smkp), smkt -->
+<para>
+
+The previous section demonstrated how to build a simple project with one
+directory using stirmake. However, complex projects have numerous directories
+and may have several binaries and several static libraries. We shall
+emulate such a project by a modular "hello world" application where the
+program invokes a function from a static library.
+
+</para><para>
+
+Let's create the top-level Stirfile first:
+<programlisting>
+@toplevel
+@strict
+$CC = "cc"
+$RM = "rm"
+$AR = "ar"
+$CFLAGS = ["-Wall", "-O3"]
+@phonyrule: 'all': 'lib/all' 'prog/all'
+@dirinclude "lib"
+@dirinclude "prog"
+</programlisting>
+
+Then let's create a directory lib with hello.c:
+<programlisting>
+#include "hello.h"
+#include &lt;stdio.h&gt;
+void hello(void)
+{
+  printf("Hello world\n");
+}
+</programlisting>
+...and hello.h:
+<programlisting>
+#ifndef _HELLO_H_
+#define _HELLO_H_
+
+void hello(void);
+
+#endif
+</programlisting>
+...and Stirfile:
+<programlisting>
+@subfile
+@strict
+$OBJS=["hello.o"]
+$DEPS=@sufsuball($OBJS, ".o", ".d")
+
+@phonyrule: 'all': 'libhello.a'
+
+'libhello.a': $OBJS
+@	[$RM, "-f", $@]
+@	[$AR, "rvs", $@, @@suffilter($^, ".o")]
+
+@patrule: $OBJS: '%.o': '%.c' '%.d'
+@	[$CC, @$CFLAGS, "-c", "-o", $@, $&lt;]
+@patrule: $DEPS: '%.d': '%.c'
+@	[$CC, @$CFLAGS, "-MM", "-o", $@, $&lt;]
+
+@cdepincludes @autophony @autotarget @ignore $DEPS
+</programlisting>
+...which contains the @-operator which is used to include a whole array into
+another array. For example, [$CC, $CFLAGS] would not be an array of strings
+since $CFLAGS is an array already. But [$CC, @$CFLAGS] is an array of strings
+due to the @-operator. The same operator is used in [$AR, "rvs", $@,
+@@suffilter($^, ".o")] where having only [$AR, "rvs", $@, @suffilter($^, ".o")]
+would not be an array of strings. Also @cdepincludes @autophony @autotarget
+@ignore was used to include C language header dependencies. Usually all of
+@autophony (add phony rule for each header), @autotarget (add target file.d in
+addition to file.o) and @ignore (don't stop if some dependency file doesn't
+exist yet) are used together.
+
+</para><para>
+Then let's create a directory prog with prog.c:
+<programlisting>
+#include "hello.h"
+int main(int argc, char **argv)
+{
+  hello();
+}
+</programlisting>
+...and Stirfile:
+<programlisting>
+@subfile
+@strict
+$OBJS=["prog.o"]
+$DEPS=@sufsuball($OBJS, ".o", ".d")
+$CFLAGS += ["-I../lib"]
+
+@phonyrule: 'all': 'prog'
+
+@distrule: 'prog': $OBJS '../lib/libhello.a'
+@	[$CC, @$CFLAGS, "-o", $@, @@suffilter($^, ".o"), @@suffilter($+, ".a")]
+
+@patrule: $OBJS: '%.o': '%.c' '%.d'
+@	[$CC, @$CFLAGS, "-c", "-o", $@, $&lt;]
+@patrule: $DEPS: '%.d': '%.c'
+@	[$CC, @$CFLAGS, "-MM", "-o", $@, $&lt;]
+
+@cdepincludes @autophony @autotarget @ignore $DEPS
+</programlisting>
+...which assigns to $CFLAGS in a manner that is visible only in this subdirectory. The other subdirectory "lib" does not have this modification to $CFLAGS. However, if the "prog" directory contained a subdirectory "prog/proghelpers", with its own Stirfile, then proghelpers would see this modification made to $CFLAGS in prog/Stirfile. This fully working nested recursive scoping is the main feature of Stirmake, making it better than GNU make.
+
+</para><para>
+
+Then several operations can be done. To fully clean the full directory
+structure, use the command:
+<programlisting>
+smka -bc
+</programlisting>
+...which works in any directory, top-level directory or either of the two
+subdirectories. Here "-b" means "clean distributable binaries" (marked with
+@distrule) and "-c" means "clean everything else than distributable binaries".
+If you want to clean only the subdirectory lib, use:
+<programlisting>
+cd lib
+smkt -bc
+</programlisting>
+
+</para><para>
+
+Another operation is building the structure. For example, the following command
+works in any directory, top-level or subdirectory, as long as the directory
+contains a Stirfile:
+<programlisting>
+smka
+</programlisting>
+...but another equivalent option would be:
+<programlisting>
+cd prog
+smkt ../all
+</programlisting>
+...here "smka" means "stirmake all" and "smkt" means "stirmake this directory".
+</para><para>
+
+The power of stirmake is evident by running:
+<programlisting>
+smka -bc
+cd prog
+smkt
+</programlisting>
+...which builds all dependencies of the prog directory too, but nothing else
+above the "prog" directory. With recursive make, this would not work:
+<programlisting>
+make clean
+cd prog
+make
+</programlisting>
+...since prog depends on lib, and the only way to build lib would be to invoke
+"make" in the top-level directory.
+
+</para>
     </sect1>
     <sect1 xml:id="environmentandconf">
       <title>Environment and configuration commands</title>
