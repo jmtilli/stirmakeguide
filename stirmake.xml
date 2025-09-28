@@ -984,7 +984,99 @@ converted to a packet buffer with @str2pb of the sliced string.
     </sect1>
     <sect1 xml:id="simpletypes">
       <title>Simple data types: number, boolean, nil</title>
-      <!-- common operations -->
+<para>
+
+The simplest data type that Stirmake supports is nil, which can contain just
+one variable: @nil. To compare if something is @nil, you need to get the @type
+of the object, since two equal signs are meant for numeric comparison and @nil
+is not a number. However, its type is a number. Checking for @nil-ness is as
+follows:
+
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+@function $CHECKNIL()
+  @locvar $isnil = @nil
+  @locvar $notnil = "nil"
+  @if(@type($isnil) == @type(@nil))
+  @dump("Is nil 1")
+  @endif
+  @if(@type($notnil) == @type(@nil))
+  @dump("Is nil 2")
+  @endif
+@endfunction
+@call $CHECKNIL()
+</programlisting>
+
+</para><para>
+
+Booleans can have two values: @false and @true. Every comparison operator
+returns a boolean. Booleans are used in @if statements as follows:
+
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+@function $BOOLFN()
+  @locvar $isnil = @nil
+  @locvar $bool = (@type($isnil) == @type(@nil))
+  @if($bool)
+  @dump("Boolean is true")
+  @endif
+@endfunction
+@call $BOOLFN()
+</programlisting>
+
+</para><para>
+
+Also, the loops @while and @for use booleans to decide whether to continue.
+
+</para><para>
+
+Numbers are IEEE double precision floating point numbers, and integers are
+special cases of numbers where the floating point part is zero. Divisions
+are true floating point divisions, but @trunc, @floor, @ceil and @round
+are supported for integer division. Addition, subtraction and multiplication
+naturally work.
+
+</para><para>
+Example of where numbers are used:
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+@function $NUMFN()
+  @locvar $num = (1*2-3)/4+5
+  @locvar $num2 = @floor((1*2-3)/4)+5
+  @locvar $math = @sqrt(@sin(@log(@exp(3))))
+  @dump($num)
+  @dump($num2)
+  @dump($math)
+  @if($num2 > 4)
+    @dump("Not reached")
+  @elseif($num > 4)
+    @dump("Reached")
+    @if($num2 == 4)
+      @dump("Reached too")
+    @endif
+  @endif
+@endfunction
+@call $NUMFN()
+</programlisting>
+
+</para><para>
+
+The @floor could be @trunc, @round or @ceil too for slightly different
+semantics. Ceil gives value above the argument value, round implements standard
+rounding, and @trunc is similar to @ceil and @floor but always goes toward
+zero, so different for negative and positive. Absolute value can be obtained by
+@abs, discarding a possible negative sign. The full @acos, @asin, @atan, @cos,
+@sin, @tan trigonometry is supported but hyperbolic functions are not
+supported. Exponentiation needs to be implemented with @exp and @log if using
+some other base than e.
+
+</para>
     </sect1>
     <sect1 xml:id="tree">
       <title>Tree</title>
