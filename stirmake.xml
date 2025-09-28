@@ -418,8 +418,95 @@ disables the functionality to reduce parallelism at times of increased load.
     </sect1>
     <sect1 xml:id="helloworld">
       <title>Compiling hello world</title>
-      <!-- document phony rules here -->
-      <!-- strict mode, in non-strict mode 4/2 is not equal to 2 -->
+
+Always "hello world" is the program that is written in any programming
+language. Similarly, it must be easy to compile "hello world", a single source
+file, in any build system.
+
+First, let's create the .c source file hello.c:
+<programlisting>
+#include %lt;stdio.h%gt;
+int main(int argc, char **argv)
+{
+  printf("Hello, world!\n");
+  return 0;
+}
+</programlisting>
+
+Then we can create the Stirfile to build it:
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all': 'hello'
+'hello': 'hello.c'
+@	["cc", "-o", $@, $&lt;]
+</programlisting>
+
+To actually build everything in this stirfile, type "smka".
+
+Note the @-tabulator at the beginning of the command line. Similar to make,
+tabulator must be present before the command. However, in this case, the @
+specifier is used to bypass shell and use direct execution of the compiler.
+
+If shell is needed, there are two options. First is to invoke sh with -c
+argument:
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all': 'hello'
+'hello': 'hello.c'
+@	["sh", "-c", "cc -o " . $@ . " " . $&lt;]
+</programlisting>
+
+The second is to invoke it the same way as with make, omitting the @ character
+before tabulator:
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all': 'hello'
+'hello': 'hello.c'
+	cc -o $@ $&lt;
+</programlisting>
+
+Both of these ways to invoke the shell are equal, as evidenced by the identical
+output:
+<programlisting>
+stirmake: Using directory /home/juhis/smdb/shell
+[., hello] sh -c cc -o hello hello.c
+</programlisting>
+
+Note that the rule 'all' is phony, but the rule 'hello' is not. A rule that
+is not phony must create its target. If the target was not created, the rule
+should probably be marked a @phonyrule. Standard GNU make does not warn if
+a rule that is non-phony does not create its target. But stirmake does warn:
+<programlisting>
+@toplevel
+@strict
+'all': 'hello'
+'hello': 'hello.c'
+@	["cc", "-o", $@, $&lt;]
+</programlisting>
+
+This results in:
+<programlisting>
+stirmake: Using directory /home/juhis/smdb/shell
+[., hello] cc -o hello hello.c
+stirmake: *** Target all was not created by rule.
+stirmake: *** Hint: use @phonyrule for phony rules.
+stirmake: *** Hint: use @mayberule for rules that may or may not update target.
+stirmake: *** Hint: use @rectgtrule for rules that have targets inside @recdep.
+stirmake: *** Target all was not created by rule. Exiting.
+</programlisting>
+
+All of the rules here were marked @strict. @strict means that targets and
+sources must be strings, using single or double quotes around them. If @strict
+is not used, you may omit the quotes. However, this is not recommended, since
+after @strict has been removed, the token 4/2 is not a mathematical expression
+equal to 2, but it's a file 2 in directory 4. The reason here being that
+maximum munch tokenization is used, and 4/2 is longer than 4, so the lexer goes
+on to include more stuff for the token. In non-@strict mode, to calculate 4
+divided by 2, you can add spaces or parentheses: 4 / 2 or (4)/(2).
+
     </sect1>
     <sect1 xml:id="modularhellolib">
       <title>Modular hello from library</title>
