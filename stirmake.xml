@@ -1226,6 +1226,7 @@ some other base than e.
   <chapter xml:id="programmingwithamyplan">
     <title>Programming Stirmake with Amyplan</title>
     <!-- abce and amyplan -->
+    <!-- installing amyplan in abce -->
     <!-- creating amyplan scripts -->
     <!-- lack of REPL due to being yacc-based -->
     <!-- constant strings and modifiable packet buffers, @str2pb, @pb2str -->
