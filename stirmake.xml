@@ -1892,6 +1892,10 @@ some other base than e.
   </chapter>
   <chapter xml:id="cleaning">
     <title>Automated cleaning with stirmake</title>
+
+    <sect1>
+      <title>Automated cleaning</title>
+
 <para>
 
 Stirmake supports automated cleaning with the options -b and -c. The option
@@ -1899,6 +1903,18 @@ Stirmake supports automated cleaning with the options -b and -c. The option
 the option -c cleans only files that have not been marked distributables. If
 you want to clean everything, you need to use both and run smka -bc.
 
+</para><para>
+
+It is possible to use "smkt -bc" to clean all files in the current directory,
+not all files in all directories. Similarly, "smkt -b" and "smkt -c" work to
+clean only files of the desired type only in the current directory.
+
+</para>
+
+    </sect1>
+    <sect1>
+      <title>Hooks</title>
+<para>
 By default, stirmake decides what files need removing when cleaned. However,
 sometimes you may want to add hooks for doing additional actions when cleaning.
 This is supported by:
@@ -1970,6 +1986,9 @@ but not cleaning only binaries, it's possible to add a hook that fails:
 ...and now "smka -b" does not work.
 
 </para>
+
+    </sect1>
+
     <!-- distrule and disttgt -->
   </chapter>
   <chapter xml:id="conditional">
