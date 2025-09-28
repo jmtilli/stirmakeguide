@@ -362,6 +362,72 @@ grow into a huge monster which makes its maintenance practically impossible.
     <title>Variables, data types and functions</title>
     <sect1 xml:id="dump">
       <title>Dump: hello from stirmake</title>
+One of the most common tools you need all the time is @dump. It prints its argument in a format that works for all of the data types.
+
+As an example, run this Stirfile:
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+@call @dump("Hello world")
+@call @dump(123)
+@call @dump(456.78)
+@call @dump(@nil)
+@call @dump(["foo", 5])
+@call @dump({"bar": {"baz": [567, 89]}})
+</programlisting>
+
+It should print:
+<programlisting>
+stirmake: Using directory /home/juhis/smdb/hello
+"Hello world"
+123
+456.77999999999997272
+null
+["foo", 5]
+{"bar": {"baz": [567, 89]}}
+stirmake: Nothing to be done.
+</programlisting>
+
+Note that dump is a debugging tool. If you want to print strings without the
+quotation marks, you need some other tool. But a clear benefit of dump is that
+it works for all data types.
+
+Also note the @call specifiers before @dump. Every time an Amyplan statement
+is run, without its output being saved to a variable, at top level (outside of
+Amyplan functions), @call is needed. Amyplan has a distinction between
+expressions and statements, and @dump is a statement. An alternative could be
+calling @dump inside a function, in which case @call is not used:
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+@function $AMYPLANFUN()
+  @dump("Hello world")
+  @dump(123)
+  @dump(456.78)
+  @dump(@nil)
+  @dump(["foo", 5])
+  @dump({"bar": {"baz": [567, 89]}})
+@endfunction
+@call $AMYPLANFUN()
+</programlisting>
+
+Note that since @dump is a statement instead of an expression, this does not
+work:
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+$DISCARD=@dump("Hello world")
+$DISCARD=@dump(123)
+$DISCARD=@dump(456.78)
+$DISCARD=@dump(@nil)
+$DISCARD=@dump(["foo", 5])
+$DISCARD=@dump({"bar": {"baz": [567, 89]}})
+@call @dump($DISCARD)
+</programlisting>
+
     </sect1>
     <sect1 xml:id="variables">
       <title>Defining variables</title>
