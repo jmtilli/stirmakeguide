@@ -732,13 +732,29 @@ converted to a packet buffer with @str2pb of the sliced string.
     <title>Example projects</title>
     <sect1>
       <title>yale</title>
+    </sect1>
+    <sect1>
       <title>abce</title>
+    </sect1>
+    <sect1>
       <title>steamingatof</title>
+    </sect1>
+    <sect1>
       <title>prettyftoa</title>
+    </sect1>
+    <sect1>
       <title>rlctrans</title>
+    </sect1>
+    <sect1>
       <title>mploop</title>
+    </sect1>
+    <sect1>
       <title>quictest</title>
+    </sect1>
+    <sect1>
       <title>fastdiv</title>
+    </sect1>
+    <sect1>
       <title>jmalloc</title>
     </sect1>
   </chapter>
@@ -779,11 +795,23 @@ converted to a packet buffer with @str2pb of the sliced string.
     <title>Example large or complex projects</title>
     <sect1>
       <title>pptk</title>
+    </sect1>
+    <sect1>
       <title>nmsynproxy</title>
+    </sect1>
+    <sect1>
       <title>ldpairwall</title>
+    </sect1>
+    <sect1>
       <title>cghcpcli</title>
+    </sect1>
+    <sect1>
       <title>stirmake</title>
+    </sect1>
+    <sect1>
       <title>caj</title>
+    </sect1>
+    <sect1>
       <title>camftpd</title>
     </sect1>
   </chapter>
