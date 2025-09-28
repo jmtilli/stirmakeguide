@@ -1494,8 +1494,72 @@ converted to a packet buffer with @str2pb of the sliced string.
     </sect1>
     <sect1 xml:id="conditionals">
       <title>Conditionals</title>
-      <!-- normal conditionals -->
-      <!-- stirmake version conditional -->
+
+<para>
+Stirmake supports conditionals both at top level and inside functions. Example:
+
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+
+$A=@true
+$B=@false
+
+@if($A)
+  @call @dump("A is true")
+@else
+  @call @dump("A is false")
+@endif
+
+@if($A)
+@deponly: 'all': 'specialrule'
+@phonyrule: 'specialrule':
+@	["echo", "A is true"]
+@endif
+
+@function $CHECKB($b)
+  @if($b)
+    @dump("B is true")
+  @elseif(!$b)
+    @dump("B is false")
+  @endif
+@endfunction
+
+@call $CHECKB($B)
+</programlisting>
+
+</para><para>
+
+Top-level conditionals can be used to affect which rules and dependencies are
+existing in the data structures of stirmake. So, in the previous example, if
+you modify $A to be false, the phony specialrule is not executed.
+
+</para><para>
+
+A particularly useful conditional is top-level version conditional. If you have
+stirmake version 7e548edc5aa47312a1c517503947aa02e5e20329 (can be checked with
+stirmake -v, the whole version history can be checked with stirmake -G), then
+you can define:
+
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+
+@if(@version("7e548edc5aa47312a1c517503947aa02e5e20329"))
+@deponly: 'all': 'specialrule'
+@phonyrule: 'specialrule':
+@	["echo", "stirmake version is recent"]
+@endif
+
+</programlisting>
+...which invokes the specialrule only if stirmake version is at least
+7e548edc5aa47312a1c517503947aa02e5e20329. Note that git version numbering is
+used here, so the version number is a SHA-1 hash.
+
+</para>
+
     </sect1>
     <sect1 xml:id="loops">
       <title>Loops</title>
