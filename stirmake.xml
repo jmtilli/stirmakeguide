@@ -23,6 +23,8 @@
 <sect1 xml:id="basics">
 <title>Introduction to basics of make</title>
 
+<para>
+
 The first and most well-known build tool is make. Stuart Feldman authored make
 in 1976 in Bell Labs. The idea of make is that while build can be done using a
 shell script, a shell script executes all build commands uncondionally. In a
@@ -34,6 +36,8 @@ that is dependent on it. For example, if a C source file is changed, only that
 source file should be recompiled and any .a archive, shared library or
 executable binary dependent on it should be re-linked.
 
+</para><para>
+
 A simple Makefile could be as follows:
 <programlisting>
 .PHONY: all
@@ -44,18 +48,28 @@ myprog: myprog.c
 	$(CC) $(CFLAGS) -o $@ $^
 </programlisting>
 
+</para><para>
+
 Here $@ refers to the target name, wheras $^ contains all dependencies. Instead of $^, the first dependency can be referred to with $&lt;.
+
+</para><para>
 
 In this case, myprog is re-built only if nonexistent, or if its timestamp is
 before the modification timestamp of myprog.c.
+
+</para>
 
 </sect1>
 <sect1 xml:id="cleanandmakefiledep">
 <title>Cleaning and dependency on Makefile</title>
 
+<para>
+
 A problem immediately appears. The file myprog does not depend on Makefile.
 So if CFLAGS is modified, myprog won't be rebuilt. The answer to this generally
 is two-fold.
+
+</para><para>
 
 Firstly, a target clean is added to clean everything:
 <programlisting>
@@ -69,12 +83,16 @@ myprog: myprog.c
 	$(CC) $(CFLAGS) -o $@ $^
 </programlisting>
 
+</para><para>
+
 Then if CFLAGS is modified, the user can run "make clean" and then "make". This
 demonstrates that the all-important "make clean" must be executed very often
 with make-based build systems. This also demonstrates that it's all too easy to
 forget something from "make clean". For example, in this simple Makefile, if a
 new target secondprog is added, it needs to be added to its rule, but also to
 "make clean" rule which is often forgotten.
+
+</para><para>
 
 Another possibility is adding dependency to Makefile, but this requires some
 changes so that it's not given to CC as an argument:
@@ -89,8 +107,12 @@ myprog: myprog.c Makefile
 	$(CC) $(CFLAGS) -o $@ $(filter %.c,$^)
 </programlisting>
 
+</para><para>
+
 Note that filter is a GNU make extension, and may not be available in other
 implementations of make.
+
+</para><para>
 
 However, with both approaches, the "solution" is to clean or re-build
 everything if the Makefile is changed. This is a problem in cases where the
@@ -98,9 +120,12 @@ Makefile is huge, but only one command to build one target is modified. Both
 "solutions" in this case recompile everything, not just the target that had
 a change in its command.
 
+</para>
+
 </sect1>
 <sect1 xml:id="largerprojects">
 <title>Somewhat larger single-directory projects</title>
+<para>
 In larger projects, it is generally preferred to not compile binary from C
 sources directly, but instead create object files that are then linked:
 <programlisting>
@@ -119,12 +144,13 @@ mylib.o: mylib.c Makefile
 	$(CC) $(CFLAGS) -c -o $@ $&lt;
 </programlisting>
 
+</para><para>
+
 Now there are two unclean approaches in this Makefile. First is that the
 information about what object files are there is repeated to three locations:
 the rule of the object file, the linking rule, and the "make clean" phony rule.
 The second is that if there are N object files, the command to build them is
 repeated N times. These can be solved with some GNU make extensions:
-
 <programlisting>
 .PHONY: all clean
 all: myprog
@@ -140,20 +166,25 @@ $(OBJS): %.o: %.c Makefile
 	$(CC) $(CFLAGS) -c -o $@ $&lt;
 </programlisting>
 
+</para><para>
+
 Now the list of object files is specified only once, and the rule to build an
 object from a source is common to all object files. Note that already at this
 stage, the standard POSIX make is not enough, an GNU extensions have to be
 used.
 
+</para>
+
 </sect1>
 <sect1 xml:id="headerfile">
 <title>Header file dependencies</title>
+
+<para>
 
 However, this more complex Makefile suffers from the fact that compiling
 myprog.c into myprog.o most likely requires inclusion of a header file,
 mylib.h. So myprog.o depends on mylib.h. This can be specified as an additional
 dependency in the Makefile:
-
 <programlisting>
 .PHONY: all clean
 all: myprog
@@ -170,14 +201,17 @@ $(OBJS): %.o: %.c Makefile
 myprog.o: mylib.h
 </programlisting>
 
+</para><para>
+
 But however, this approach does not scale. Every time a C file is modified and
 a new header file is added, it must be documented in the Makefile. Worse, a
 header file can include other headers, and all of them should be documented
 in the Makefile. Clearly, something better is needed.
 
+</para><para>
+
 Fortunately, most C compilers support outputting dependencies, which can be
 imported:
-
 <programlisting>
 .PHONY: all clean
 all: myprog
@@ -197,14 +231,20 @@ $(DEPS): %.d: %.c Makefile
 -include $(DEPS)
 </programlisting>
 
+</para><para>
+
 So the C compiler then creates the files myprog.d mylib.d that both myprog.o
 and mylib.o depend on mylib.h. This is fully automatic. Before a build has been
 made, the .d dependency files don't exist, but then everything must be
 initially compiled anyway. In this case, -MM means omit system header files.
 With -M only, system header file dependencies would be stored in the .d files.
 
+</para><para>
+
 Also notice that instead of include, you use -include. This is because the
 dependency files don't exist the first time make is run.
+
+</para><para>
 
 Is the Makefile now good enough? No, because if mylib.h is renamed to
 mylibpublic.h, then the .d files contain reference to the old mylib.h and make
@@ -212,7 +252,6 @@ notices it can't find that file. So an empty phony rule is needed to affect
 make in such a manner that it doesn't exit when finding a reference to a
 nonexistent header file. Fortunately, the -M option has -MP which adds the
 phony rules and now "make clean" is not necessary if a header is renamed:
-
 <programlisting>
 .PHONY: all clean
 all: myprog
@@ -232,10 +271,11 @@ $(DEPS): %.d: %.c Makefile
 -include $(DEPS)
 </programlisting>
 
+</para><para>
+
 However, this is not all that needs to be done. The .d files aren't updated
 if a header file changes, only the .o files are updated. Fortunately, most
 C compilers have an option to solve this: -MT:
-
 <programlisting>
 .PHONY: all clean
 all: myprog
@@ -255,8 +295,12 @@ $(DEPS): %.d: %.c Makefile
 -include $(DEPS)
 </programlisting>
 
+</para><para>
+
 Now the .d files finally work just fine. However, there were a lot of
 difficulties in the road to make the ultimate dependency file mechanism.
+
+</para>
 </sect1>
 
   </chapter>
@@ -264,10 +308,19 @@ difficulties in the road to make the ultimate dependency file mechanism.
     <title>Where make fails, multi-directory projects</title>
     <sect1 xml:id="makedirsep">
       <title>Make with directory separators</title>
-      Let's consider you have a directory prog with file prog.c, and a directory lib with files lib1.c and lib2.c, creating a static library file liblib.a. Then the Makefile needs to create liblib.a and link it into prog. How to do this in make?
 
-      Make does not have support for multiple nested directories, but make does accept slash in file names. So let's create a top-level Makefile that compiles stuff in directories prog and lib.
+<para>
 
+Let's consider you have a directory prog with file prog.c, and a directory lib
+with files lib1.c and lib2.c, creating a static library file liblib.a. Then the
+Makefile needs to create liblib.a and link it into prog. How to do this in
+make?
+
+</para><para>
+
+Make does not have support for multiple nested directories, but make does
+accept slash in file names. So let's create a top-level Makefile that compiles
+stuff in directories prog and lib:
 <programlisting>
 .PHONY: all clean
 all: prog/prog lib/liblib.a
@@ -292,14 +345,20 @@ $(DEPALL): %.d: %.c Makefile
 -include $(DEPALL)
 </programlisting>
 
-Note tht in this program listing, the argument -o $@ to make is necessary.
+</para><para>
+
+Note that in this program listing, the argument -o $@ to make is necessary.
 Without it, the C compile is executed in the top-level directory, and the
 output file would be stored into this top-level directory, not in the
 subdirectory where the source file is.
 
+</para><para>
+
 This approach works but suffers from the drawback that in a project of 3000
 subdirectories like in Linux kernel, the one and only top-level Makefile would
 grow into a huge monster which makes its maintenance practically impossible.
+
+</para>
     </sect1>
     <sect1 xml:id="makefileperdir">
       <title>Another approach: Makefile per directory</title>
@@ -335,6 +394,7 @@ grow into a huge monster which makes its maintenance practically impossible.
     <sect1 xml:id="stirmakeinstall">
       <title>Compiling and installing stirmake</title>
 
+<para>
 Firstly, before stirmake can be used, flex, byacc and git need to be installed.
 Flex is a very widely used tool, the most common implementation of lex today,
 so its installation shouldn't be a problem, as most Unix-like operating systems
@@ -346,8 +406,12 @@ stirmake, bison was considered but rejected due to the GPL license, which byacc
 does not suffer from. Fortunately, byacc should be easy to compile from sources
 if the operating system does not have a ready-made package for it.
 
+</para><para>
+
 You also need GNU make to bootstrap stirmake, and the essential build tools
 like C compiler and linker.
+
+</para><para>
 
 On RedHat, you would install the dependencies as follows:
 <programlisting>
@@ -355,10 +419,14 @@ yum install flex byacc git
 yum groupinstall 'Development Tools'
 </programlisting>
 
+</para><para>
+
 On Debian and Ubuntu, it works as follows:
 <programlisting>
 apt install flex byacc git build-essential
 </programlisting>
+
+</para><para>
 
 Now when dependencies have been installed, it's time to recursively clone and
 install stirmake:
@@ -368,6 +436,8 @@ cd stirmake/stirc
 make
 ./install.sh
 </programlisting>
+
+</para><para>
 
 This installs stirmake to your ~/.local/bin that needs to be in the path. If
 the directory did not exist, it probably isn't in the path and you may need to
@@ -380,6 +450,8 @@ sudo ./install.sh /usr/local
 sudo mandb
 </programlisting>
 
+</para><para>
+
 After it has been installed, try it:
 <programlisting>
 mkdir stirmaketry
@@ -390,11 +462,15 @@ smkp
 smkt
 </programlisting>
 
+</para><para>
+
 All of the commands to invoke stirmake should print something like this:
 <programlisting>
 stirmake: Using directory /home/YOURUSERNAME/stirmaketry
 stirmake: *** Stirfile not found. Exiting.
 </programlisting>
+
+</para><para>
 
 They should also leave a .stir.db file containing just two lines out of which
 the second is empty:
@@ -402,6 +478,8 @@ the second is empty:
 @v2@
 
 </programlisting>
+
+</para><para>
 
 Stirmake has been designed to work on POSIX systems but sometimes non-POSIX
 functions are needed. For example, stirmake heavily benefits from availability
@@ -415,13 +493,19 @@ present in POSIX is getloadavg, but all the important operating systems like
 BSDs, Linux, MacOS X and Solaris have it. Stirmake can work without it, but it
 disables the functionality to reduce parallelism at times of increased load.
 
+</para>
+
     </sect1>
     <sect1 xml:id="helloworld">
       <title>Compiling hello world</title>
 
+<para>
+
 Always "hello world" is the program that is written in any programming
 language. Similarly, it must be easy to compile "hello world", a single source
 file, in any build system.
+
+</para><para>
 
 First, let's create the .c source file hello.c:
 <programlisting>
@@ -433,6 +517,8 @@ int main(int argc, char **argv)
 }
 </programlisting>
 
+</para><para>
+
 Then we can create the Stirfile to build it:
 <programlisting>
 @toplevel
@@ -442,11 +528,17 @@ Then we can create the Stirfile to build it:
 @	["cc", "-o", $@, $&lt;]
 </programlisting>
 
+</para><para>
+
 To actually build everything in this stirfile, type "smka".
+
+</para><para>
 
 Note the @-tabulator at the beginning of the command line. Similar to make,
 tabulator must be present before the command. However, in this case, the @
 specifier is used to bypass shell and use direct execution of the compiler.
+
+</para><para>
 
 If shell is needed, there are two options. First is to invoke sh with -c
 argument:
@@ -458,6 +550,8 @@ argument:
 @	["sh", "-c", "cc -o " . $@ . " " . $&lt;]
 </programlisting>
 
+</para><para>
+
 The second is to invoke it the same way as with make, omitting the @ character
 before tabulator:
 <programlisting>
@@ -468,12 +562,16 @@ before tabulator:
 	cc -o $@ $&lt;
 </programlisting>
 
+</para><para>
+
 Both of these ways to invoke the shell are equal, as evidenced by the identical
 output:
 <programlisting>
 stirmake: Using directory /home/juhis/smdb/shell
 [., hello] sh -c cc -o hello hello.c
 </programlisting>
+
+</para><para>
 
 Note that the rule 'all' is phony, but the rule 'hello' is not. A rule that
 is not phony must create its target. If the target was not created, the rule
@@ -487,6 +585,8 @@ a rule that is non-phony does not create its target. But stirmake does warn:
 @	["cc", "-o", $@, $&lt;]
 </programlisting>
 
+</para><para>
+
 This results in:
 <programlisting>
 stirmake: Using directory /home/juhis/smdb/shell
@@ -498,6 +598,8 @@ stirmake: *** Hint: use @rectgtrule for rules that have targets inside @recdep.
 stirmake: *** Target all was not created by rule. Exiting.
 </programlisting>
 
+</para><para>
+
 All of the rules here were marked @strict. @strict means that targets and
 sources must be strings, using single or double quotes around them. If @strict
 is not used, you may omit the quotes. However, this is not recommended, since
@@ -506,6 +608,8 @@ equal to 2, but it's a file 2 in directory 4. The reason here being that
 maximum munch tokenization is used, and 4/2 is longer than 4, so the lexer goes
 on to include more stuff for the token. In non-@strict mode, to calculate 4
 divided by 2, you can add spaces or parentheses: 4 / 2 or (4)/(2).
+
+</para><para>
 
 Note that the @-tabulator syntax has a different way to specify variables than
 the tabulator syntax. The @-tabulator syntax parses an arbitrary Amyplan
@@ -521,6 +625,8 @@ $CC = "cc"
 @	[$CC, "-o", $@, $&lt;]
 </programlisting>
 
+</para><para>
+
 But with tabulator, this doesn't work:
 <programlisting>
 @toplevel
@@ -530,6 +636,8 @@ $CC = "cc"
 'hello': 'hello.c'
 	$CC -o $@ $&lt;
 </programlisting>
+
+</para><para>
 
 But you must do this instead:
 <programlisting>
@@ -541,6 +649,8 @@ $CC = "cc"
 	$(CC) -o $@ $&lt;
 </programlisting>
 
+</para><para>
+
 However, the $(CC) syntax works outside a tabulator line too:
 <programlisting>
 @toplevel
@@ -550,6 +660,8 @@ $(CC) = "cc"
 'hello': 'hello.c'
 @	[$(CC), "-o", $@, $&lt;]
 </programlisting>
+
+</para>
 
     </sect1>
     <sect1 xml:id="modularhellolib">
@@ -579,7 +691,12 @@ $(CC) = "cc"
     <title>Variables, data types and functions</title>
     <sect1 xml:id="dump">
       <title>Dump: hello from stirmake</title>
+
+<para>
+
 One of the most common tools you need all the time is @dump. It prints its argument in a format that works for all of the data types.
+
+</para><para>
 
 As an example, run this Stirfile:
 <programlisting>
@@ -594,6 +711,8 @@ As an example, run this Stirfile:
 @call @dump({"bar": {"baz": [567, 89]}})
 </programlisting>
 
+</para><para>
+
 It should print:
 <programlisting>
 stirmake: Using directory /home/YOURUSERNAME/SUBDIR
@@ -606,9 +725,13 @@ null
 stirmake: Nothing to be done.
 </programlisting>
 
+</para><para>
+
 Note that dump is a debugging tool. If you want to print strings without the
 quotation marks, you need some other tool. But a clear benefit of dump is that
 it works for all data types.
+
+</para><para>
 
 Also note the @call specifiers before @dump. Every time an Amyplan statement
 is run, without its output being saved to a variable, at top level (outside of
@@ -630,6 +753,8 @@ calling @dump inside a function, in which case @call is not used:
 @call $AMYPLANFUN()
 </programlisting>
 
+</para><para>
+
 Note that since @dump is a statement instead of an expression, this does not
 work:
 <programlisting>
@@ -645,9 +770,13 @@ $DISCARD=@dump({"bar": {"baz": [567, 89]}})
 @call @dump($DISCARD)
 </programlisting>
 
+</para>
+
     </sect1>
     <sect1 xml:id="variables">
       <title>Defining variables</title>
+
+<para>
 
 Variables can be defined outside of functions with the following syntax:
 <programlisting>
@@ -662,14 +791,20 @@ $MYVAR ?= @nil
 @call @dump($MYVAR)
 </programlisting>
 
+</para><para>
+
 Note the several assignment operators here. ?= is conditional assigment,
 assign only if the variable is nonexistent. = is the normal assigment
 operator. For lists, += allows appending multiple elements to the list.
+
+</para><para>
 
 Generally, it is recommended that you define variables $CC and $CFLAGS if you
 compile C code. Both of them ideally should be arrays, since some Makefiles in
 fact assign some of the arguments to $CC into $CC and not into $CFLAGS. Also
 defining variables for sources and targets as arrays is typical.
+
+</para><para>
 
 Inside functions, accessing and assigning into global variables requires
 scope information, lexical or dynamic. An example of lexical scoping:
@@ -690,12 +825,13 @@ $MYVAR ?= @nil
 @call $MYFUN2()
 </programlisting>
 
+</para><para>
+
 Lexical scoping @L means that the function acceses the scope in which it was
 defined. Dynamic scoping with @D would mean the function accesses the scope in
 which it was called. Local variables are accessed without scope specifiers.  If
 a variale access happens inside a function, it is a local variable as default.
 Even function calls need scope specifiers:
-
 <programlisting>
 @toplevel
 @strict
@@ -713,15 +849,23 @@ $MYVAR ?= @nil
 @call $MYFUN2()
 </programlisting>
 
+</para><para>
+
 Note that local variables need to be defined at the start of the function.
 If you need a local variable set in the middle of the function, you need to
 define it at the start, but you can assign @nil into it if you don't have
 anything better to assign.
+
+</para>
     </sect1>
     <sect1 xml:id="specvar">
       <title>Special variables</title>
 
+<para>
+
 There are five special variables: $@, $&lt;, $^, $+ and $|.
+
+</para><para>
 
 Out of these, $@, $lt; and $^ are the most often used. $@ is the name of the
 first target. $&lt; is the name of the first source. $^ is the names of all
@@ -730,15 +874,23 @@ files are repeated in the exact same order, which may be useful sometimes for
 linking static libraries that may have circular dependencies. $| is the names
 of all order-only dependencies.
 
+</para><para>
+
 Out of these, $@ and$&lt; are strings and the others are arrays of strings.
+
+</para>
 
     </sect1>
     <sect1 xml:id="datatypes">
       <title>Data types, finally we can have spaces in filenames!</title>
 
+<para>
+
 As mentioned already, stirmake supports strings and arrays. This is a
 difference with make since make supports only strings, and arrays are emulated
 by space-delimited strings, which means a filename cannot contain spaces.
+
+</para><para>
 
 Stirmake, via its programming language Amyplan and bytecode engine abce
 supports the following data types:
@@ -755,6 +907,8 @@ supports the following data types:
 <listitem><para>Functions, which contain reference to the lexical scope, and which may be called with the correct number of arguments</para></listitem>
 <listitem><para>Several internal data types not exposed to the programmer</para></listitem>
 </itemizedlist>
+
+</para><para>
 
 The @type expression can be used to obtain the type of a variable, but as it is
 a number that doesn't document itself, you should use @type of an example object
@@ -788,6 +942,8 @@ $MYVAR = [1,2,3]
 @call @dump(@type($MYVAR) == @type({}))
 </programlisting>
 
+</para><para>
+
 Note the @tostring and @tonumber operations which can be used to convert
 between strings and numbers, and the @str2pb and @pb2str operations which can
 be used to convert between strings and packet buffers. The @pb2str operation
@@ -795,6 +951,8 @@ requires starting index (0-based starts from 0) and length of slice to take
 from the packet buffer. The @str2pb always takes the entire string, but <link
 linkend="string">strings can be sliced with @strsub</link> if needed, and then
 converted to a packet buffer with @str2pb of the sliced string.
+
+</para>
 
     </sect1>
     <sect1 xml:id="conditionals">
