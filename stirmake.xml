@@ -1892,6 +1892,84 @@ some other base than e.
   </chapter>
   <chapter xml:id="cleaning">
     <title>Automated cleaning with stirmake</title>
+<para>
+
+Stirmake supports automated cleaning with the options -b and -c. The option
+-b cleans only files that have been marked distributables (@distrule), whereas
+the option -c cleans only files that have not been marked distributables. If
+you want to clean everything, you need to use both and run smka -bc.
+
+By default, stirmake decides what files need removing when cleaned. However,
+sometimes you may want to add hooks for doing additional actions when cleaning.
+This is supported by:
+
+<programlisting>
+@toplevel
+@strict
+
+@cleanhook:
+@	["echo", "cleanhook"]
+
+@distcleanhook:
+@	["echo", "distcleanhook"]
+
+@bothcleanhook:
+@	["echo", "bothcleanhook"]
+
+@phonyrule: 'all':
+@	["echo", "all"]
+</programlisting>
+
+</para><para>
+
+Now if you type "smka -c" the cleanhook is executed. If you type "smka -b", the
+distcleanhook is executed. If you type "smka -bc", then bothcleanhook is
+executed. If you type "smka" without anything, then the first ordinary rule,
+"all", is executed.
+
+</para><para>
+
+There cannot be multiple hooks:
+<programlisting>
+@toplevel
+@strict
+
+@cleanhook:
+@	["echo", "cleanhook"]
+
+@cleanhook:
+@	["echo", "anothercleanhook"]
+
+@phonyrule: 'all':
+@	["echo", "all"]
+</programlisting>
+...which, when called with "smka" will say the hook already exists. However,
+each subdirectory may have its own hooks.
+
+</para><para>
+
+If interfacing to a sub-make that supports cleaning object files and all files
+but not cleaning only binaries, it's possible to add a hook that fails:
+
+<programlisting>
+@toplevel
+@strict
+
+@cleanhook:
+@	["echo", "cleanhook"]
+
+@distcleanhook:
+@	["false"]
+
+@bothcleanhook:
+@	["echo", "bothcleanhook"]
+
+@phonyrule: 'all':
+@	["echo", "all"]
+</programlisting>
+...and now "smka -b" does not work.
+
+</para>
     <!-- distrule and disttgt -->
   </chapter>
   <chapter xml:id="conditional">
