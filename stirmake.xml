@@ -821,8 +821,80 @@ make
     </sect1>
     <sect1 xml:id="environmentandconf">
       <title>Environment and configuration commands</title>
-      <!-- getenv, chomp, strwordlist, shell-assign, shell-shell-assign -->
-      <!-- $PYTHON_CFLAGS ``= ["python3-config", "-"."-includes"] -->
+
+<para>
+
+In standard make, if you do $(CC) $(CFLAGS), it uses both of these from
+the environment, if the Makefile does not override them. This can cause
+surprising bugs, where a Makefile works in one environment and not in another
+environment. Stirmake is different, because in Stirmake if you want a
+variable to be obtained from environment, you must obtain it manually. An
+example:
+<programlisting>
+@toplevel
+@strict
+$CC=@strwordlist(@getenv("CC"), " ")
+@if($CC[] == 0)
+$CC=["cc"]
+@endif
+$CFLAGS=@strwordlist(@getenv("CFLAGS"), " ")
+@phonyrule: 'all': 'hello'
+'hello': 'hello.c'
+@	[@$CC, @$CFLAGS, "-o", $@, $&lt;]
+</programlisting>
+
+</para><para>
+
+In this case, if the environment variable does not exist, @getenv returns @nil.
+However, @strwordlist has a special feature which returns an empty array for
+@nil argument. Here $CFLAGS is not mandatory so if it's [], nothing is done.
+However, $CC must be defined, so the array is checked for emptiness and if
+empty, the default value ["cc"] is used. Note how both $CC and $CFLAGS are
+arrays. This is done because some environments may specify CC="cc -O3" for
+example, although usually you would expect O3 to be in CFLAGS and not in CC.
+However, because GNU make does not support true arrays, every variable is a
+potential array with space as the separator.
+
+</para><para>
+
+The previous example showed how environment variables can be used. But in
+some cases, you have to run a configuration command to get the arguments.
+For example, when developing Python 3 applications, you would use the command
+python3-config --includes. How to use it in Stirmake:
+<programlisting>
+@toplevel
+@strict
+$CC=["cc"]
+$CFLAGS=["-Wall", "-O3"]
+$PYCFLAGS``=["python3-config", "--includes"]
+$CFLAGS += $PYCFLAGS
+@phonyrule: 'all': 'hello'
+'hello': 'hello.c'
+@	[@$CC, @$CFLAGS, "-o", $@, $&lt;]
+</programlisting>
+...so here the magic was the shell assignment operator ``. A similar operator
+but with one backtick, `=, would give you the entire unprocessed output of
+the command, with newline at end if the command printed a newline. This newline
+may be removed with $VAR=@chomp($VAR). However, in this case you want an array
+with space as the separator for compatibility with GNU make, so the assignment
+operator needs to have two backticks, which interprets the output as an array
+with space as the separator. Note that @strwordlist could be used here as
+needed:
+<programlisting>
+@toplevel
+@strict
+$CC=["cc"]
+$CFLAGS=["-Wall", "-O3"]
+$PYCFLAGS`=["python3-config", "--includes"]
+$PYCFLAGS=@strwordlist(@chomp($PYCFLAGS), " ")
+$CFLAGS += $PYCFLAGS
+@phonyrule: 'all': 'hello'
+'hello': 'hello.c'
+@	[@$CC, @$CFLAGS, "-o", $@, $&lt;]
+</programlisting>
+..so the operator with two backticks is only a convenience operator for a
+common case.
+</para>
     </sect1>
     <sect1 xml:id="multiprocessing">
       <title>Multiprocessor machines</title>
