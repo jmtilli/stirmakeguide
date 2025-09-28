@@ -334,7 +334,87 @@ grow into a huge monster which makes its maintenance practically impossible.
     <title>Introducing stirmake</title>
     <sect1 xml:id="stirmakeinstall">
       <title>Compiling and installing stirmake</title>
-      <!-- flex, byacc, POSIX, some non-POSIX or deprecated fn requirements -->
+
+Firstly, before stirmake can be used, flex, byacc and git need to be installed.
+Flex is a very widely used tool, the most common implementation of lex today,
+so its installation shouldn't be a problem, as most Unix-like operating systems
+have an easy way to install it. Similarly, git is probably the most popular
+version control system so installing it shouldn't be a problem. On the other
+hand, byacc may cause problems in some environments. At least RedHat and
+Debian-based systems such as Ubuntu contain byacc in their repositories. In
+stirmake, bison was considered but rejected due to the GPL license, which byacc
+does not suffer from. Fortunately, byacc should be easy to compile from sources
+if the operating system does not have a ready-made package for it.
+
+You also need GNU make to bootstrap stirmake, and the essential build tools
+like C compiler and linker.
+
+On RedHat, you would install the dependencies as follows:
+<programlisting>
+yum install flex byacc git
+yum groupinstall 'Development Tools'
+</programlisting>
+
+On Debian and Ubuntu, it works as follows:
+<programlisting>
+apt install flex byacc git build-essential
+</programlisting>
+
+Now when dependencies have been installed, it's time to recursively clone and
+install stirmake:
+<programlisting>
+git clone --recursive https://github.com/Aalto5G/stirmake
+cd stirmake/stirc
+make
+./install.sh
+</programlisting>
+
+This installs stirmake to your ~/.local/bin that needs to be in the path. If
+the directory did not exist, it probably isn't in the path and you may need to
+re-log-in. Globally installing stirmake to /usr/local would happen as follows,
+assuming it's already cloned:
+<programlisting>
+cd stirmake/stirc
+make
+sudo ./install.sh /usr/local
+sudo mandb
+</programlisting>
+
+After it has been installed, try it:
+<programlisting>
+mkdir stirmaketry
+cd stirmaketry
+stirmake -a
+smka
+smkp
+smkt
+</programlisting>
+
+All of the commands to invoke stirmake should print something like this:
+<programlisting>
+stirmake: Using directory /home/YOURUSERNAME/stirmaketry
+stirmake: *** Stirfile not found. Exiting.
+</programlisting>
+
+They should also leave a .stir.db file containing just two lines out of which
+the second is empty:
+<programlisting>
+@v2@
+
+</programlisting>
+
+Stirmake has been designed to work on POSIX systems but sometimes non-POSIX
+functions are needed. For example, stirmake heavily benefits from availability
+of madvise but does not require it. But what stirmake requires is the
+possibility to map anonymous memory, whether it's MAP_ANON or MAP_ANONYMOUS
+argument to mmap, or mmap from an open file /dev/zero. Also obsolete POSIX
+setitimer is needed since the newer equivalents timer_settime etc. may not be
+available on all systems like OpenBSD. The new POSIX utimensat heavily benefits
+stirmake, but it can work with utimes if utimensat is not present. What is not
+present in POSIX is getloadavg, but all the important operating systems like
+BSDs, Linux, MacOS X and Solaris have it. Stirmake can work without it, but it
+disables the functionality to reduce parallelism at times of increased load.
+
     </sect1>
     <sect1 xml:id="helloworld">
       <title>Compiling hello world</title>
