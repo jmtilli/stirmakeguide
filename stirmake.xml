@@ -1952,6 +1952,7 @@ some other base than e.
       <title>Specifying library lists that work everywhere</title>
       <!-- introduce problem of specifying static dependencies -->
       <!-- @dirdown @dirup -->
+      <!-- ~/stirmake/examples/addld -->
     </sect1>
   </chapter>
   <chapter xml:id="examplelargeprojects">
