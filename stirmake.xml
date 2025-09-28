@@ -464,7 +464,7 @@ As an example, run this Stirfile:
 
 It should print:
 <programlisting>
-stirmake: Using directory /home/juhis/smdb/hello
+stirmake: Using directory /home/YOURUSERNAME/SUBDIR
 "Hello world"
 123
 456.77999999999997272
