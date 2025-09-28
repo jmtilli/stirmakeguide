@@ -507,10 +507,55 @@ maximum munch tokenization is used, and 4/2 is longer than 4, so the lexer goes
 on to include more stuff for the token. In non-@strict mode, to calculate 4
 divided by 2, you can add spaces or parentheses: 4 / 2 or (4)/(2).
 
+Note that the @-tabulator syntax has a different way to specify variables than
+the tabulator syntax. The @-tabulator syntax parses an arbitrary Amyplan
+expression, which should create an array. This means for example variable
+CC can be referred to by $CC. However, the tabulator-only syntax
+requires $(CC). So you can have:
+<programlisting>
+@toplevel
+@strict
+$CC = "cc"
+@phonyrule: 'all': 'hello'
+'hello': 'hello.c'
+@	[$CC, "-o", $@, $&lt;]
+</programlisting>
+
+But with tabulator, this doesn't work:
+<programlisting>
+@toplevel
+@strict
+$CC = "cc"
+@phonyrule: 'all': 'hello'
+'hello': 'hello.c'
+	$CC -o $@ $&lt;
+</programlisting>
+
+But you must do this instead:
+<programlisting>
+@toplevel
+@strict
+$CC = "cc"
+@phonyrule: 'all': 'hello'
+'hello': 'hello.c'
+	$(CC) -o $@ $&lt;
+</programlisting>
+
+However, the $(CC) syntax works outside a tabulator line too:
+<programlisting>
+@toplevel
+@strict
+$(CC) = "cc"
+@phonyrule: 'all': 'hello'
+'hello': 'hello.c'
+@	[$(CC), "-o", $@, $&lt;]
+</programlisting>
+
     </sect1>
     <sect1 xml:id="modularhellolib">
       <title>Modular hello from library</title>
       <!-- demonstrate nested recursive scoping here -->
+      <!-- demonstrate @$CFLAGS here to include one array in another -->
       <!-- invoking stirmake: smka, (smkp), smkt -->
     </sect1>
     <sect1 xml:id="environmentandconf">
