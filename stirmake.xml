@@ -346,6 +346,11 @@ grow into a huge monster which makes its maintenance practically impossible.
       <!-- demonstrate nested recursive scoping here -->
       <!-- invoking stirmake: smka, (smkp), smkt -->
     </sect1>
+    <sect1 xml:id="tracingdebugging">
+      <title>Environment and configuration commands</title>
+      <!-- getenv, chomp, strwordlist, shell-assign, shell-shell-assign -->
+      <!-- $PYTHON_CFLAGS ``= ["python3-config", "-"."-includes"] -->
+    </sect1>
     <sect1 xml:id="multiprocessing">
       <title>Multiprocessor machines</title>
       <!-- -ja, -la, etc -->
@@ -578,9 +583,6 @@ requires starting index (0-based starts from 0) and length of slice to take
 from the packet buffer. The @str2pb always takes the entire string, but <link
 linkend="string">strings can be sliced with @strsub</link> if needed, and then
 converted to a packet buffer with @str2pb of the sliced string.
-
-<!-- string -->
-
 
     </sect1>
     <sect1 xml:id="conditionals">
