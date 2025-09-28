@@ -431,6 +431,75 @@ $DISCARD=@dump({"bar": {"baz": [567, 89]}})
     </sect1>
     <sect1 xml:id="variables">
       <title>Defining variables</title>
+
+Variables can be defined outside of functions with the following syntax:
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+$MYVAR ?= @nil
+@call @dump($MYVAR)
+$MYVAR = [2, "fof", {"bar": {"baz": [567, 89]}}]
+$MYVAR += [12345, 54321]
+$MYVAR ?= @nil
+@call @dump($MYVAR)
+</programlisting>
+
+Note the several assignment operators here. ?= is conditional assigment,
+assign only if the variable is nonexistent. = is the normal assigment
+operator. For lists, += allows appending multiple elements to the list.
+
+Generally, it is recommended that you define variables $CC and $CFLAGS if you
+compile C code. Both of them ideally should be arrays, since some Makefiles in
+fact assign some of the arguments to $CC into $CC and not into $CFLAGS. Also
+defining variables for sources and targets as arrays is typical.
+
+Inside functions, accessing and assigning into global variables requires
+scope information, lexical or dynamic. An example of lexical scoping:
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+$MYVAR ?= @nil
+@function $MYFUN()
+  @L$MYVAR = 5
+@endfunction
+@function $MYFUN2()
+  @locvar $MYVAR=321
+  @dump(@L$MYVAR)
+  @dump($MYVAR)
+@endfunction
+@call $MYFUN()
+@call $MYFUN2()
+</programlisting>
+
+Lexical scoping @L means that the function acceses the scope in which it was
+defined. Dynamic scoping with @D would mean the function accesses the scope in
+which it was called. Local variables are accessed without scope specifiers.  If
+a variale access happens inside a function, it is a local variable as default.
+Even function calls need scope specifiers:
+
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+$MYVAR ?= @nil
+@function $MYFUN()
+  @L$MYVAR = 5
+@endfunction
+@function $MYFUN2()
+  @locvar $MYVAR=321
+  @L$MYFUN()
+  @dump(@L$MYVAR)
+  @dump($MYVAR)
+@endfunction
+@call $MYFUN2()
+</programlisting>
+
+Note that local variables need to be defined at the start of the function.
+If you need a local variable set in the middle of the function, you need to
+define it at the start, but you can assign @nil into it if you don't have
+anything better to assign.
     </sect1>
     <sect1 xml:id="specvar">
       <title>Special variables</title>
