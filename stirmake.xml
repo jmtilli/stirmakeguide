@@ -728,6 +728,20 @@ converted to a packet buffer with @str2pb of the sliced string.
   <chapter xml:id="conditional">
     <title>Conditional compilation</title>
   </chapter>
+  <chapter xml:id="exampleprojects">
+    <title>Example projects</title>
+    <sect1>
+      <title>yale</title>
+      <title>abce</title>
+      <title>steamingatof</title>
+      <title>prettyftoa</title>
+      <title>rlctrans</title>
+      <title>mploop</title>
+      <title>quictest</title>
+      <title>fastdiv</title>
+      <title>jmalloc</title>
+    </sect1>
+  </chapter>
   </part>
   <part xml:id="part_stirmakelargescale">
   <title>Stirmake in large-scale systems</title>
@@ -759,6 +773,18 @@ converted to a packet buffer with @str2pb of the sliced string.
       <title>Specifying library lists that work everywhere</title>
       <!-- introduce problem of specifying static dependencies -->
       <!-- @dirdown @dirup -->
+    </sect1>
+  </chapter>
+  <chapter xml:id="examplelargeprojects">
+    <title>Example large or complex projects</title>
+    <sect1>
+      <title>pptk</title>
+      <title>nmsynproxy</title>
+      <title>ldpairwall</title>
+      <title>cghcpcli</title>
+      <title>stirmake</title>
+      <title>caj</title>
+      <title>camftpd</title>
     </sect1>
   </chapter>
   </part>
