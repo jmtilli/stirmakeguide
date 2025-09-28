@@ -492,6 +492,9 @@ stirmake, but it can work with utimes if utimensat is not present. What is not
 present in POSIX is getloadavg, but all the important operating systems like
 BSDs, Linux, MacOS X and Solaris have it. Stirmake can work without it, but it
 disables the functionality to reduce parallelism at times of increased load.
+Also stirmake needs to know how many processors the machine has, which is a
+non-POSIX call, and if the system does not support getting processor count,
+then as default 1 is used. This only affects the -la and -ja options.
 
 </para>
 
@@ -898,9 +901,69 @@ common case.
     </sect1>
     <sect1 xml:id="multiprocessing">
       <title>Multiprocessor machines</title>
-      <!-- -ja, -la, etc -->
-      <!-- need to specify all targets if there are multiple -->
-      <!-- make does not support specifying all targets -->
+
+<para>
+
+Stirmake fully supports multiprocessor machines, but you need to invoke it
+using the command-line option -j, which is true for make as well. However,
+stirmake goes one step further with the -j option and supports CPU count
+autodetection. So if you have an 8-core machine, you can run:
+<programlisting>
+smka -j4
+</programlisting>
+...to use 4 cores, or run:
+<programlisting>
+smka -j8
+</programlisting>
+...to use all 8 cores, which is synonymous for an 8-core machine with:
+<programlisting>
+smka -ja
+</programlisting>
+
+</para><para>
+
+Stirmake makes it easy to implement parallel Stirfiles, and warns you about
+situations that are arguably errors like a command not modifying its target,
+but you need to remember that parallel Stirfiles need to contain all
+dependencies and all targets. In contrast to standard make where a rule
+cannot have more than one target, stirmake does not have such a restriction.
+So, we can finally support flex in a way that works well for parallel stirmake:
+<programlisting>
+'test.lex.c' 'test.lex.h': 'test.lex.l'
+@	["flex", "--outfile=".$@, "--header-file=".@sufsubone($@,".c",".h"), $&lt;]
+@deponly: 'test.lex.d' 'test.lex.o': 'test.lex.h'
+</programlisting>
+
+</para><para>
+
+For parallel GNU make, the best we can do (ugh!) is:
+<programlisting>
+test.lex.c: test.lex.l
+	flex --outfile=$@ --header-file=/dev/null $&lt;
+test.lex.h: test.lex.l
+	flex --outfile=/dev/null --header-file=@sufsubone($@,".c",".h") $&lt;
+text.lex.d: test.lex.h
+text.lex.o: test.lex.h
+</programlisting>
+...which unnecessarily invokes flex twice.
+
+</para><para>
+
+Another useful feature available on any system that supports getting load
+averages is a parallel stirmake that forks child processes only as long as load
+averages are below a critical value. For example, on an 8-core machine, more
+parallelism than 8 simultaneous processes probably doesn't help, and just in
+case two different persons would on the same server invoke smka -j8, the
+behavior of stirmake in such a situation is improved by smka -j8 -l8 which
+forks new processes only as long as load average is below the threshold 8.
+Naturally, -la is supported so maybe the ultimate parallel stirmake command
+is:
+<programlisting>
+smka -ja -la
+</programlisting>
+
+</para>
+
     </sect1>
     <sect1 xml:id="tracingdebugging">
       <title>Tracing and debugging</title>
