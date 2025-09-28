@@ -503,16 +503,93 @@ anything better to assign.
     </sect1>
     <sect1 xml:id="specvar">
       <title>Special variables</title>
+
+There are five special variables: $@, $&lt;, $^, $+ and $|.
+
+Out of these, $@, $lt; and $^ are the most often used. $@ is the name of the
+first target. $&lt; is the name of the first source. $^ is the names of all
+sources, with duplicates removed. $+ is the same as $^, but duplicate source
+files are repeated in the exact same order, which may be useful sometimes for
+linking static libraries that may have circular dependencies. $| is the names
+of all order-only dependencies.
+
+Out of these, $@ and$&lt; are strings and the others are arrays of strings.
+
     </sect1>
     <sect1 xml:id="datatypes">
       <title>Data types, finally we can have spaces in filenames!</title>
-      <!-- @type, @nil -->
+
+As mentioned already, stirmake supports strings and arrays. This is a
+difference with make since make supports only strings, and arrays are emulated
+by space-delimited strings, which means a filename cannot contain spaces.
+
+Stirmake, via its programming language Amyplan and bytecode engine abce
+supports the following data types:
+
+<itemizedlist mark="bullet">
+<listitem><para>@nil</para></listitem>
+<listitem><para>Boolean: @false or @true</para></listitem>
+<listitem><para>Number: IEEE double precision floating point, can contain both integers and floating-point numbers, all 32-bit integers can be exactly specified</para></listitem>
+<listitem><para>String: an immutable sequence of 8-bit characters, with Unicode as UTF-8 if used</para></listitem>
+<listitem><para>Packet buffer: a mutable sequence of bytes, can be converted from/to strings, contents can be modified, length can be modified</para></listitem>
+<listitem><para>Array: a mutable sequence of any objects of any types</para></listitem>
+<listitem><para>Tree: a mapping from immutable strings to any objects of any type. Note that numbers cannot be used as keys, but numbers can be converted to strings which can be used as keys.</para></listitem>
+<listitem><para>I/O streams: a reference to a file which can be use to read and write data</para></listitem>
+<listitem><para>Functions, which contain reference to the lexical scope, and which may be called with the correct number of arguments</para></listitem>
+<listitem><para>Several internal data types not exposed to the programmer</para></listitem>
+</itemizedlist>
+
+The @type expression can be used to obtain the type of a variable, but as it is
+a number that doesn't document itself, you should use @type of an example object
+against which the type of the object is compared:
+
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+$MYVAR = @nil
+@call @dump(@type($MYVAR) == @type(@nil))
+@call @dump(@type($MYVAR) == @type(@false))
+$MYVAR = 543.21
+@call @dump(@type($MYVAR) == @type(123))
+@call @dump(@type($MYVAR) == @type("foo"))
+$MYVAR = @tostring($MYVAR)
+@call @dump(@type($MYVAR) == @type("foo"))
+$MYVAR = @tonumber($MYVAR)
+@call @dump(@type($MYVAR) == @type(123))
+$MYVAR = @tostring($MYVAR)
+@call @dump(@type($MYVAR) == @type("foo"))
+@call @dump(@type($MYVAR) == @type(@pbnew()))
+$MYVAR = @str2pb($MYVAR)
+@call @dump(@type($MYVAR) == @type("foo"))
+@call @dump(@type($MYVAR) == @type(@pbnew()))
+$MYVAR = @pb2str($MYVAR,0,$MYVAR{@})
+@call @dump(@type($MYVAR) == @type("foo"))
+@call @dump(@type($MYVAR) == @type(@pbnew()))
+$MYVAR = [1,2,3]
+@call @dump(@type($MYVAR) == @type([]))
+@call @dump(@type($MYVAR) == @type({}))
+</programlisting>
+
+Note the @tostring and @tonumber operations which can be used to convert
+between strings and numbers, and the @str2pb and @pb2str operations which can
+be used to convert between strings and packet buffers. The @pb2str operation
+requires starting index (0-based starts from 0) and length of slice to take
+from the packet buffer. The @str2pb always takes the entire string, but <link
+linkend="string">strings can be sliced with @strsub</link> if needed, and then
+converted to a packet buffer with @str2pb of the sliced string.
+
+<!-- string -->
+
+
     </sect1>
     <sect1 xml:id="conditionals">
+      <title>Conditionals</title>
       <!-- normal conditionals -->
       <!-- stirmake version conditional -->
     </sect1>
     <sect1 xml:id="loops">
+      <title>Loops</title>
       <!-- while, for, once, break, continue, break N, continue N -->
     </sect1>
     <sect1 xml:id="string">
