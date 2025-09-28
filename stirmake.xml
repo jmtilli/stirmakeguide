@@ -187,7 +187,7 @@ OBJS=myprog.o mylib.o
 DEPS=$(patsubst %.o,%.d,$(OBJS))
 clean:
 	rm -f myprog
-	rm -f $(OBJS)
+	rm -f $(OBJS) $(DEPS)
 myprog: $(OBJS) Makefile
 	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^)
 $(OBJS): %.o: %.c %.d Makefile
@@ -222,7 +222,7 @@ OBJS=myprog.o mylib.o
 DEPS=$(patsubst %.o,%.d,$(OBJS))
 clean:
 	rm -f myprog
-	rm -f $(OBJS)
+	rm -f $(OBJS) $(DEPS)
 myprog: $(OBJS) Makefile
 	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^)
 $(OBJS): %.o: %.c %.d Makefile
@@ -245,7 +245,7 @@ OBJS=myprog.o mylib.o
 DEPS=$(patsubst %.o,%.d,$(OBJS))
 clean:
 	rm -f myprog
-	rm -f $(OBJS)
+	rm -f $(OBJS) $(DEPS)
 myprog: $(OBJS) Makefile
 	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^)
 $(OBJS): %.o: %.c %.d Makefile
@@ -264,8 +264,42 @@ difficulties in the road to make the ultimate dependency file mechanism.
     <title>Where make fails, multi-directory projects</title>
     <sect1 xml:id="makedirsep">
       <title>Make with directory separators</title>
-      <!-- cc invoked in top-level directory, creates its outputs there -->
-      <!-- option -o needed to tell to store output to subdirectory -->
+      Let's consider you have a directory prog with file prog.c, and a directory lib with files lib1.c and lib2.c, creating a static library file liblib.a. Then the Makefile needs to create liblib.a and link it into prog. How to do this in make?
+
+      Make does not have support for multiple nested directories, but make does accept slash in file names. So let's create a top-level Makefile that compiles stuff in directories prog and lib.
+
+<programlisting>
+.PHONY: all clean
+all: prog/prog lib/liblib.a
+CC=cc
+CFLAGS=-O1
+OBJLIB=lib/lib1.o lib/lib2.o
+OBJPROG=prog/prog.o
+OBJALL=$(OBJLIB) $(OBJPROG)
+DEPALL=$(patsubst %.o,%.d,$(OBJALL))
+clean:
+	rm -f prog/prog lib/liblib.a
+	rm -f $(OBJALL) $(DEPALL)
+prog/prog: prog/prog.o lib/liblib.a Makefile
+	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^) $(filter %.a,$^)
+lib/liblib.a: $(OBJLIB) Makefile
+	rm -f $@
+	ar rvs $@ $(filter %.o,$^)
+$(OBJALL): %.o: %.c %.d Makefile
+	$(CC) $(CFLAGS) -c -o $@ $&lt;
+$(DEPALL): %.d: %.c Makefile
+	$(CC) $(CFLAGS) -MM -MP -MT $*.d -MT $*.o -o $@ $&lt;
+-include $(DEPALL)
+</programlisting>
+
+Note tht in this program listing, the argument -o $@ to make is necessary.
+Without it, the C compile is executed in the top-level directory, and the
+output file would be stored into this top-level directory, not in the
+subdirectory where the source file is.
+
+This approach works but suffers from the drawback that in a project of 3000
+subdirectories like in Linux kernel, the one and only top-level Makefile would
+grow into a huge monster which makes its maintenance practically impossible.
     </sect1>
     <sect1 xml:id="makefileperdir">
       <title>Another approach: Makefile per directory</title>
