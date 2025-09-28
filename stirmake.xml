@@ -749,9 +749,6 @@ converted to a packet buffer with @str2pb of the sliced string.
       <title>quictest</title>
     </sect1>
     <sect1>
-      <title>fastdiv</title>
-    </sect1>
-    <sect1>
       <title>jmalloc</title>
     </sect1>
   </chapter>
@@ -813,6 +810,9 @@ converted to a packet buffer with @str2pb of the sliced string.
     </sect1>
     <sect1>
       <title>camftpd</title>
+    </sect1>
+    <sect1>
+      <title>fastdiv</title>
     </sect1>
   </chapter>
   </part>
