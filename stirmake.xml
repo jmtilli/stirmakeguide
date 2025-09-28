@@ -962,13 +962,266 @@ is:
 smka -ja -la
 </programlisting>
 
+</para><para>
+
+One problem with parallel stirmake is that if two cc instances are running at
+the same time, they are competing their access to the standard output and
+standard error streams, so the error and warning messages from these two cc
+instances can end up being mixed in the output. If you want to collect warning
+messages together so that they can't end up being mixed, you can use the output
+sync feature:
+<programlisting>
+smka -ja -la -Otarget
+</programlisting>
+
+This collects the output from each target together. Unfortunately, it may
+disable the coloring of cc output, since cc no longer knows it's eventually
+writing to a terminal (it first writes to a pipe, which is outputted by
+stirmake to te terminal). The same non-coloring of output happens with GNU make
+as well, so this problem is not unique to stirmake. However, with GNU make you
+need the -j8 (or similar) option with -Otarget to end up having the coloring
+problem, but with stirmake just -Otarget causes the coloring problem.
+
 </para>
 
     </sect1>
     <sect1 xml:id="tracingdebugging">
       <title>Tracing and debugging</title>
-      <!-- tracing -->
-      <!-- debugging -->
+
+<para>
+
+Stirmake supports two ways of getting information. The lightweight way is
+tracing, which prints information about why stirmake decided to execute
+commands in a rule. This is a one-liner for every rule that's executed, and
+contains the information why this rule was invoked. Example using the modular
+hello world in <link linkend="modularhellolib">a preceding section</link>:
+
+<programlisting>
+smka -bc
+smka -R
+</programlisting>
+
+...where the second command outputs:
+<programlisting>
+stirmake: Using directory /home/YOURUSERNAME/MODULARHELLO
+update target 'lib/hello.d' due to: being nonexistent
+update target 'prog/prog.d' due to: being nonexistent
+[prog, prog/prog.d] cc -Wall -O3 -I../lib -MM -o prog.d prog.c
+update target 'prog/prog.o' due to: being nonexistent
+[prog, prog/prog.o] cc -Wall -O3 -I../lib -c -o prog.o prog.c
+[lib, lib/hello.d] cc -Wall -O3 -MM -o hello.d hello.c
+update target 'lib/hello.o' due to: being nonexistent
+[lib, lib/hello.o] cc -Wall -O3 -c -o hello.o hello.c
+update target 'lib/libhello.a' due to: being nonexistent
+[lib, lib/libhello.a] rm -f libhello.a
+[lib, lib/libhello.a] ar rvs libhello.a hello.o
+ar: creating libhello.a
+a - hello.o
+update target 'prog/prog' due to: being nonexistent
+[prog, prog/prog] cc -Wall -O3 -I../lib -o prog prog.o ../lib/libhello.a
+</programlisting>
+
+</para><para>
+
+Note that the decision to build some target may not result in an immediate execution of the target, but it's queued and the queue is emptied later. So the
+stirmake instance found that lib/hello.d needs to be built in first line of the
+output, but built it much later, as the third comand to be executed.
+
+</para><para>
+
+Another way to obtain debugging information from stirmake, is the heavyweight
+debug mode. It outputs a huge amount of debugging information:
+<programlisting>
+smka -bc
+smka -d
+</programlisting>
+...where the second command outputs:
+<programlisting>
+stirmake: Using directory /home/YOURUSERNAME/MODULARHELLO
+ADDING RULE
+Rule all (.): add_rule
+ADDING RULE
+Rule lib/all (lib): add_rule
+ADDING RULE
+Rule lib/libhello.a (lib): add_rule
+ADDING RULE
+Rule lib/hello.o (lib): add_rule
+ADDING RULE
+Rule lib/hello.d (lib): add_rule
+ADDING RULE
+Rule prog/all (prog): add_rule
+ADDING RULE
+Rule prog/prog (prog): add_rule
+ADDING RULE
+Rule prog/prog.o (prog): add_rule
+ADDING RULE
+Rule prog/prog.d (prog): add_rule
+reading cdepincludes from lib/hello.d
+reading cdepincludes from prog/prog.d
+considering all
+ considering lib/all
+  considering lib/libhello.a
+   considering lib/hello.o
+   ruleid by target lib/hello.c not found
+    considering lib/hello.d
+    ruleid by target lib/hello.c not found
+     do_exec lib/hello.d
+     ruleid for tgt lib/hello.c not found
+     dep: 1759065139 86411140
+     statting lib/hello.d
+     immediate has_to_exec
+     do_exec: has_to_exec 4
+   rule 4 not executed, executing rule 3
+  rule 3 not executed, executing rule 2
+ rule 2 not executed, executing rule 1
+rule 1 not executed, executing rule 0
+ considering prog/all
+  considering prog/prog
+   considering prog/prog.o
+   ruleid by target prog/prog.c not found
+    considering prog/prog.d
+    ruleid by target prog/prog.c not found
+     do_exec prog/prog.d
+     ruleid for tgt prog/prog.c not found
+     dep: 1759065099 90314873
+     statting prog/prog.d
+     immediate has_to_exec
+     do_exec: has_to_exec 8
+   rule 8 not executed, executing rule 7
+  rule 7 not executed, executing rule 6
+   considering lib/libhello.a
+   already execing lib/libhello.a
+  rule 2 not executed, executing rule 6
+ rule 6 not executed, executing rule 5
+rule 5 not executed, executing rule 0
+forking1 child
+start args:
+  NI E NM cc -Wall -O3 -I../lib -MM -o prog.d prog.c
+end args
+[prog, prog/prog.d] cc -Wall -O3 -I../lib -MM -o prog.d prog.c
+select returned
+ reconsidering prog/prog.o
+  considering prog/prog.d
+  already execed prog/prog.d
+  do_exec prog/prog.o
+  ruleid for tgt prog/prog.c not found
+  dep: 1759065099 90314873
+  ruleid 8/prog/prog.d not phony
+  dep: 1759070742 375562092
+  statting prog/prog.o
+  immediate has_to_exec
+  do_exec: has_to_exec 7
+forking child
+start args:
+  NI E NM cc -Wall -O3 -I../lib -c -o prog.o prog.c
+end args
+[prog, prog/prog.o] cc -Wall -O3 -I../lib -c -o prog.o prog.c
+select returned
+ reconsidering prog/prog
+ deps remain: 1
+   dep_remain: 2 / lib/libhello.a
+  considering lib/libhello.a
+  already execing lib/libhello.a
+ rule 2 not executed, executing rule 6
+forking child
+start args:
+  NI E NM cc -Wall -O3 -MM -o hello.d hello.c
+end args
+[lib, lib/hello.d] cc -Wall -O3 -MM -o hello.d hello.c
+select returned
+ reconsidering lib/hello.o
+  considering lib/hello.d
+  already execed lib/hello.d
+  do_exec lib/hello.o
+  ruleid for tgt lib/hello.c not found
+  dep: 1759065139 86411140
+  ruleid 4/lib/hello.d not phony
+  dep: 1759070742 399562149
+  statting lib/hello.o
+  immediate has_to_exec
+  do_exec: has_to_exec 3
+forking child
+start args:
+  NI E NM cc -Wall -O3 -c -o hello.o hello.c
+end args
+[lib, lib/hello.o] cc -Wall -O3 -c -o hello.o hello.c
+select returned
+ reconsidering lib/libhello.a
+  considering lib/hello.o
+  already execed lib/hello.o
+  do_exec lib/libhello.a
+  ruleid 3/lib/hello.o not phony
+  dep: 1759070742 423562206
+  statting lib/libhello.a
+  immediate has_to_exec
+  do_exec: has_to_exec 2
+forking child
+start args:
+  NI E NM rm -f libhello.a
+  NI E NM ar rvs libhello.a hello.o
+end args
+[lib, lib/libhello.a] rm -f libhello.a
+[lib, lib/libhello.a] ar rvs libhello.a hello.o
+ar: creating libhello.a
+a - hello.o
+select returned
+ reconsidering lib/all
+  considering lib/libhello.a
+  already execed lib/libhello.a
+  do_exec lib/all
+  do_exec: mark_executed lib/all has_to_exec 1
+    reconsidering all
+    deps remain: 1
+      dep_remain: 5 / prog/all
+     considering prog/all
+     already execing prog/all
+    rule 5 not executed, executing rule 0
+ reconsidering prog/prog
+  considering lib/libhello.a
+  already execed lib/libhello.a
+  do_exec prog/prog
+  ruleid 7/prog/prog.o not phony
+  dep: 1759070742 395562139
+  ruleid 2/lib/libhello.a not phony
+  dep: 1759070742 423562206
+  statting prog/prog
+  immediate has_to_exec
+  do_exec: has_to_exec 6
+forking child
+start args:
+  NI E NM cc -Wall -O3 -I../lib -o prog prog.o ../lib/libhello.a
+end args
+[prog, prog/prog] cc -Wall -O3 -I../lib -o prog prog.o ../lib/libhello.a
+select returned
+ reconsidering prog/all
+  considering prog/prog
+  already execed prog/prog
+  do_exec prog/all
+  do_exec: mark_executed prog/all has_to_exec 1
+    reconsidering all
+     considering prog/all
+     already execed prog/all
+     do_exec all
+     do_exec: mark_executed all has_to_exec 1
+
+Memory use statistics:
+  stringtab: 22
+  ruleid_by_tgt_entry: 9
+  tgt: 9
+  stirdep: 13
+  dep_remain: 9
+  ruleid_by_dep_entry: 10
+  one_ruleid_by_dep_entry: 13
+  add_dep: 0
+  add_deps: 0
+  rule: 9
+  ruleid_by_pid: 6
+</programlisting>
+...clearly, debug mode should be avoided unless the lighterweight trace mode
+didn't reveal what happened and the heavyweight debug mode is needed then.
+
+</para>
+
     </sect1>
   </chapter>
   <chapter xml:id="variabledatatypefunction">
