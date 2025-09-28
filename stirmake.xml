@@ -1031,6 +1031,29 @@ returns a boolean. Booleans are used in @if statements as follows:
 </para><para>
 
 Also, the loops @while and @for use booleans to decide whether to continue.
+With booleans, you can use the &amp;&amp;, || and ! operators for logical and,
+logical or and not, respectively:
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+@function $BOOLOP()
+  @locvar $isnil = @nil
+  @locvar $bool = !(@true &amp;&amp; (@false || @true))
+  @if($bool)
+  @dump("Boolean is true")
+  @else
+  @dump("Boolean is false")
+  @endif
+@endfunction
+@call $BOOLOP()
+</programlisting>
+
+</para><para>
+
+The logical and an not operators do not unnecessarily evaluate the second
+argument if the first argument can give the value of the operation
+unambiguously.
 
 </para><para>
 
