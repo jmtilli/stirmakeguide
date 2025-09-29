@@ -2467,8 +2467,139 @@ some other base than e.
     </sect1>
     <sect1 xml:id="tree">
       <title>Tree</title>
-      <!-- common operations: length, existence query, get/set/del -->
-      <!-- fordict, fordictprev, dictprev, dictnext -->
+
+<para>
+
+Stirmake supports an associative array, which is sometimes varyingly called
+"tree" or "dictionary". It is a red-black tree. The keys used in this red-black
+tree are immutable strings. Nothing else, like numbers, are supported as keys,
+but obviously any number can be converted to its textual representation with
+ease.
+
+</para><para>
+
+Here is an example of defining a tree:
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+@function $TREE()
+  @locvar $tree = { \
+    "ab": 123, \
+    "cd": [4,5,6], \
+    "ef": @true, \
+    "gh": @nil, \
+    "ij": "str" \
+  }
+  @dump($tree)
+@endfunction
+@call $TREE()
+</programlisting>
+
+</para><para>
+
+Once you have defined a tree, you can get from it, add to it and delete from it:
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+@function $TREEMOD()
+  @locvar $tree = { \
+    "ab": 123, \
+    "cd": [4,5,6], \
+    "ef": @true, \
+    "gh": @nil, \
+    "ij": "str" \
+  }
+  @dump($tree{"ab"}) # Get existing value
+  $tree{"ab"} = 321 # Modify existing value
+  $tree{"a"} = 432 # Add new value
+  $tree{"ij"} = - # Remove value
+  @dump($tree)
+@endfunction
+@call $TREEMOD()
+</programlisting>
+
+</para><para>
+
+It is also possible to query membership and get length:
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+@function $TREEQUERIES()
+  @locvar $tree = { \
+    "ab": 123, \
+    "cd": [4,5,6], \
+    "ef": @true, \
+    "gh": @nil, \
+    "ij": "str" \
+  }
+  @dump($tree{@?"a"}) # Check existence, false
+  @dump($tree{@?"ab"}) # Check existence, true
+  @dump($tree{}) # Get length, 5
+@endfunction
+@call $TREEQUERIES()
+</programlisting>
+
+</para><para>
+
+There are fordict and fordictprev loops to iterate through a tree:
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+@function $TREELOOPS()
+  @locvar $key = @nil
+  @locvar $val = @nil
+  @locvar $tree = { \
+    "ab": 123, \
+    "cd": [4,5,6], \
+    "ef": @true, \
+    "gh": @nil, \
+    "ij": "str" \
+  }
+  @fordict $key, $val ($tree)
+    @dump($key . " = " . @jsonenc($val))
+  @endfor
+  @dump("-----")
+  @fordictprev $key, $val ($tree)
+    @dump($key . " = " . @jsonenc($val))
+  @endfor
+@endfunction
+@call $TREELOOPS()
+</programlisting>
+
+</para><para>
+
+It is possible to get previous and next key from trees, and @nil as argument
+means get first or last key.
+
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+@function $TREEPREVNEXT()
+  @locvar $tree = { \
+    "ab": 123, \
+    "cd": [4,5,6], \
+    "ef": @true, \
+    "gh": @nil, \
+    "ij": "str" \
+  }
+  @dump(@dictnext($tree, "ef"))
+  @dump(@dictprev($tree, "ef"))
+  @dump(@dictnext($tree, "eg"))
+  @dump(@dictprev($tree, "eg")) # FIXME error
+  @dump(@dictnext($tree, "e"))
+  @dump(@dictprev($tree, "e")) # FIXME error
+  @dump(@dictnext($tree, @nil))
+  @dump(@dictprev($tree, @nil))
+@endfunction
+@call $TREEPREVNEXT()
+</programlisting>
+
+</para>
     </sect1>
     <sect1 xml:id="functiondelayeval">
       <title>Functions and delayed evaluation</title>
