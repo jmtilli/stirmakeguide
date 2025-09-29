@@ -2071,6 +2071,8 @@ $MIXEDCASE = "ABCdef"
 @call @dump(@strreverse($MIXEDCASE))
 </programlisting>
 
+</para><para>
+
 Strings can be converted to numbers and back to strings:
 <programlisting>
 @toplevel
@@ -2082,10 +2084,130 @@ $NUMSTR = "123.5"
 @call @dump(@tostring(@tonumber($NUMSTR)+100))
 </programlisting>
 
+</para><para>
+
+Finding index of a substring inside a string is supported:
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+$WHOLE="abc123ABC"
+@call @dump(@strstr($WHOLE, "123"))
+@call @dump(@strstr($WHOLE, "456"))
+</programlisting>
+...which prints 3 and null.
+
+</para><para>
+
+String repetition in supported:
+
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+$SHORT="012"
+@call @dump(@strrep($SHORT, 3))
+</programlisting>
+...which prints 012012012
+
+</para><para>
+
+Whitespace at start and end can be stripped:
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+$WS="\t   012 "
+@call @dump(@strstrip($WS, " \t"))
+</programlisting>
+
+</para><para>
+
+Substrings can be obtained:
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+$NUMS="0123456789"
+@call @dump(@strsub($NUMS, 3, 5))
+</programlisting>
+...where start index 3 is included but end index 5 is not.
+
+</para><para>
+
+Global search&amp;replace (substitution) is supported:
+
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+$STR="Testing string substitution with this string"
+@call @dump(@strgsub($STR, "string", "String"))
+</programlisting>
+
+</para><para>
+
+String words can be counted:
+
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+$STR="Testing string word count with this string"
+@call @dump(@strwordcnt($STR, " "))
+</programlisting>
+
+</para><para>
+
+Individual words can be selected:
+
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+$STR="Testing string word count with this string"
+@call @dump(@strword($STR, " ", 2))
+</programlisting>
+
+</para><para>
+
+Individual characters can be replaced with their numerical values, creating
+a new string as strings are immutable:
+
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+$STR="abc012"
+@call @dump(@strset($STR, 2, ("C")[@0]))
+</programlisting>
+
+</para><para>
+
+The two remaining standard string operations are conversions between
+strings and arrays. For example, strings can be split into word lists, with
+custom separator:
+
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+$STR="Testing string word list."
+@call @dump(@strwordlist($STR, " "))
+</programlisting>
+
+and lists of strings can be joined with custom separator:
+
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+$AR=["Testing", "string", "word", "list."]
+@call @dump(@strlistjoin(" ", $AR))
+</programlisting>
+
 </para>
 
-      <!-- strstr, strrep, strlistjoin, strappend, strstrip -->
-      <!-- strsub, strgsub, strset, strword, strwordcnt, strwordlist -->
     </sect1>
     <sect1 xml:id="array">
       <title>Array</title>
