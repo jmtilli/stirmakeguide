@@ -2464,7 +2464,7 @@ some other base than e.
     </sect1>
     <sect1 xml:id="tree">
       <title>Tree</title>
-      <!-- common operations -->
+      <!-- common operations: length, existence query, get/set/del -->
       <!-- fordict, fordictprev, dictprev, dictnext -->
     </sect1>
     <sect1 xml:id="functiondelayeval">
