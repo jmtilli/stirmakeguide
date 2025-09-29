@@ -1975,11 +1975,137 @@ And if you want to break outside of a loop not the innermost, @break (and
     </sect1>
     <sect1 xml:id="array">
       <title>Array</title>
-      <!-- common operations -->
-      <!-- list splice -->
-      <!-- append -->
-      <!-- appendlist -->
-      <!-- array append assignment top-level only -->
+<para>
+
+Arguably the most important data type in Stirmake is array. It allows doing
+something Make cannot do, to have list of file names that may or may not
+include spaces in them. Arrays are defined by square brackets and accessed
+by square brackets too:
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+$ARRAY=[1,2,3,4,5]
+@call @dump($ARRAY[2])
+</programlisting>
+
+Indexing is zero-based so the previous listing prints 3. Array length can
+be queried by leaving the index between square brackets away:
+
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+$ARRAY=[5,4,3,2,1]
+@call @dump($ARRAY[])
+</programlisting>
+...which prints 5, the length of the array.
+
+</para><para>
+
+Arrays can be appended to:
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+@function $APPEND()
+  @locvar $ARRAY=[5,4,3,2,1]
+  @append($ARRAY, 2)
+  @appendlist($ARRAY, [3,4,5])
+  @dump($ARRAY)
+@endfunction
+@call $APPEND()
+</programlisting>
+...which prints [5,4,3,2,1,2,3,4,5].
+
+</para><para>
+
+Array slicing is supported too:
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+@function $SPLICE()
+  @locvar $ARRAY=[0,1,2,3,4,5,6,7]
+  @dump(@splice($ARRAY, 2, 5))
+@endfunction
+@call $SPLICE()
+</programlisting>
+...which prints [2, 3, 4] so it includes the start index (2) but not the end
+index (5).
+
+</para><para>
+
+Removing the last element of an array is supported:
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+@function $POP()
+  @locvar $ARRAY=[5,4,3,2,1]
+  @locvar $LAST=$ARRAY[-]
+  @dump($LAST)
+  @dump($ARRAY)
+@endfunction
+@call $POP()
+</programlisting>
+...which prints 1 and then [5,4,3,2].
+
+</para><para>
+
+Array items can be assigned to:
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+@function $ASSIGN()
+  @locvar $ARRAY=[5,4,3,2,1]
+  $ARRAY[2] = 50
+  @dump($ARRAY)
+@endfunction
+@call $ASSIGN()
+</programlisting>
+...which prints [5, 4, 50, 2, 1].
+
+</para><para>
+
+Embedding an existing array into a new array is possible with the @-operator:
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+@function $EMBED()
+  @locvar $SHORT=[1,2,3]
+  @locvar $LONG=[9,8,7,@$SHORT,7,8,9]
+  @dump($LONG)
+@endfunction
+@call $EMBED()
+</programlisting>
+...which prints [9,8,7,1,2,3,7,8,9].
+
+</para><para>
+
+There is also support outside of functions to append-assign into an array:
+<programlisting>
+@toplevel
+@strict
+$ARRAY=[1,2,3]
+$ARRAY += [4,5,6]
+@phonyrule: 'all':
+@call @dump($ARRAY)
+</programlisting>
+...which prints [1,2,3,4,5,6] and which has an equivalent that works inside
+functions too:
+<programlisting>
+@toplevel
+@strict
+$ARRAY=[1,2,3]
+$ARRAY=[@$ARRAY,4,5,6]
+@phonyrule: 'all':
+@call @dump($ARRAY)
+</programlisting>
+
+</para>
     </sect1>
     <sect1 xml:id="simpletypes">
       <title>Simple data types: number, boolean, nil</title>
