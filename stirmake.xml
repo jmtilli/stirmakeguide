@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- vim: set noai indentexpr&
 -->
-<book xml:id="stirmake" xmlns="http://docbook.org/ns/docbook" version="5.0">
+<book xml:id="stirmake" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink" version="5.0">
   <info>
     <title>Scalable true implementation of recursive make (stirmake)</title>
     <author>
@@ -362,18 +362,254 @@ grow into a huge monster which makes its maintenance practically impossible.
     </sect1>
     <sect1 xml:id="makefileperdir">
       <title>Another approach: Makefile per directory</title>
+<para>
+
+Since clearly one top-level Makefile in a project does not offer enough
+modularity, something better is needed. One possibility is that each
+directory has a Makefile and the top-level Makefile calls make for each
+subdirectory.
+
+</para>
       <sect2 xml:id="recursivemaketest">
         <title>Let's try recursive make</title>
+<para>
+
+An environment for recursive make is presented here. It consists of top-level
+directory and two subdirectories, lib and prog. The files in lib are:
+
+</para><para>
+
+hello.h:
+<programlisting>
+#ifndef _HELLO_H_
+#define _HELLO_H_
+void libhello(void);
+#endif
+</programlisting>
+
+hello.c:
+<programlisting>
+#include &lt;stdio.h&gt;
+#include "hello.h"
+void libhello(void)
+{
+        printf("Hello, world!\n");
+}
+</programlisting>
+
+Makefile:
+<programlisting>
+.PHONY: all clean
+all: libhello.a
+OBJ=hello.o
+DEP=$(patsubst %.o,%.d,$(OBJ))
+CC=cc
+CFLAGS=-Wall
+libhello.a: $(OBJ) Makefile
+	rm -f $@
+	ar rvs $@ $(filter %.o,$^)
+$(OBJ): %.o: %.c %.d Makefile
+	$(CC) $(CFLAGS) -c -o $@ $&lt;
+$(DEP): %.d: %.c Makefile
+	$(CC) $(CFLAGS) -MM -MP -MT $*.d -MT $*.o -o $@ $&lt;
+clean:
+	rm -f libhello.a $(OBJ) $(DEP)
+</programlisting>
+
+</para><para>
+
+The files in prog are:
+
+</para><para>
+
+prog.c:
+<programlisting>
+#include "hello.h"
+int main(int argc, char **argv)
+{
+        libhello();
+        return 0;
+}
+</programlisting>
+
+Makefile:
+<programlisting>
+.PHONY: all clean
+all: prog
+OBJ=prog.o
+DEP=$(patsubst %.o,%.d,$(OBJ))
+CC=cc
+CFLAGS=-Wall
+CFLAGS+=-I../lib
+prog: $(OBJ) Makefile ../lib/libhello.a
+	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^) $(filter %.a,$^)
+$(OBJ): %.o: %.c %.d Makefile
+	$(CC) $(CFLAGS) -c -o $@ $&lt;
+$(DEP): %.d: %.c Makefile
+	$(CC) $(CFLAGS) -MM -MP -MT $*.d -MT $*.o -o $@ $&lt;
+clean:
+	rm -f prog $(OBJ) $(DEP)
+</programlisting>
+
+</para><para>
+
+The top-level directory contains just this Makefile:
+
+<programlisting>
+CC=cc
+CFLAGS=-Wall
+
+.PHONY: all clean lib prog
+
+all: lib prog
+
+prog: lib
+
+prog:
+	$(MAKE) -C prog
+lib:
+	$(MAKE) -C lib
+
+clean:
+	$(MAKE) -C prog clean
+	$(MAKE) -C lib clean
+</programlisting>
+
+</para><para>
+
+Several problems are evident here. For example, the top-level Makefile needs to
+have a rule that prog depends on lib. The reason being that prog contains one
+program, prog.c, that needs to be linked to libhello.a which is a target in
+lib. However, this linking needs to happen only for linking prog.o and
+libhello.a into prog. So an optimization is possible: if we could build prog.o
+and prog.d at the same time libhello.a is built, parallelism could be improved.
+However, recursive make is incapable of implementing such an optimization, and
+the need to know module-level dependencies in the top-level Makefile is clearly
+not a scalable approach. If there are 3000 modules like in Linux kernel, having
+full information about their dependencies in the top-level Makefile is not
+scalable. Worse, the directory prog could contain subdirectories prog/prog1,
+prog/prog2, prog/prog3 and the directory lib could contain sudirectories
+lib/lib1, lib/lib2, lib/lib3. In this case, if the top-level Makefile invokes
+Makefile in directory lib and in directory prog, it needs the prog: lib
+dependency too, even though not all programs depend on all of the libraries.
+These are drawbacks of artificially partitioning the build into disjoint
+directed acyclic graphs as opposed to having a single directed acyclic graph
+for the entire directory structure.
+
+</para><para>
+
+Another problem is evident by running "make clean" and then typing "cd prog;
+make" which doesn't work since lib has not been built. So the system works well
+only when "make" is invoked top-level, but it does not prevent running "make"
+in a subdirectory. However, running "make" in a subdirectory can only work if
+the dependencies have already been built.
+
+</para><para>
+
+Also, note how -Wall in CFLAGS needed to be modified in both prog and lib, even
+though it is included in the top-level Makefile. The reason being is that not
+only is the directed acyclic graph artificially divided into disjoint sets, but
+also each of these disjoint sets corresponds to a different variable namespace.
+
+</para><para>
+
+Optimally, if the top-level Makefile specifies some variables, they would be
+visible to all subdirectories, but if subdirectory lib defines something, it
+would be visible only to subdirectories of lib, not to top-level subdirectory
+prog. However, without some extra tricks, this is not possible in make.
+
+</para>
       </sect2>
       <sect2 xml:id="nocommonnamespace">
         <title>Fixing no common namespace: include file</title>
+
+<para>
+
+One possibility of improving recursive make is by offering include files in
+parent directories that the subdirectory Makefile can include. For example,
+the top-level Makefile could be paired with top-level make.inc:
+
+<programlisting>
+CC=cc
+CFLAGS=-Wall
+</programlisting>
+
+...and then each subdirectory would include this, for example prog/Makefile:
+
+<programlisting>
+include ../make.inc
+.PHONY: all clean
+all: prog
+OBJ=prog.o
+DEP=$(patsubst %.o,%.d,$(OBJ))
+CFLAGS+=-I../lib
+prog: $(OBJ) Makefile ../lib/libhello.a
+	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^) $(filter %.a,$^)
+$(OBJ): %.o: %.c %.d Makefile
+	$(CC) $(CFLAGS) -c -o $@ $&lt;
+$(DEP): %.d: %.c Makefile
+	$(CC) $(CFLAGS) -MM -MP -MT $*.d -MT $*.o -o $@ $&lt;
+clean:
+	rm -f prog $(OBJ) $(DEP)
+</programlisting>
+
+Now CC does not need specifying and CFLAGS can be appended to, with the -Wall
+already there. This usage of recursive make and include files that subdirectory
+Makefiles can include provides a very convenient scoping for variables. Even
+though the variables in top-level Makefile are not visible, at least the
+variables in top-level make.inc are. And the child Makefiles can import
+../make.inc and multiple nested subdirectories can be supported by having
+make.inc in the subdirectories which includes ../make.inc always.
+
+</para>
+
       </sect2>
       <sect2 xml:id="dangersofseparating">
         <title>Drawbacks and dangers of separating build to multiple DAGs</title>
-        <!-- top-level directory must have module-level dependencies -->
-        <!-- parallel build hard: explain the jobserver hack -->
-        <!-- "Recursive Make Considered Harmful" -->
-        <!-- so let's try another approach, inclusive make -->
+
+<para>
+
+However, the breakage of invoking make in a subdirectory of a cleaned project
+structure is still there, and the top-level Makefile still needs to know the
+module-level dependencies. Also some optimizations for parallel build cannot be
+expressed with having module-level dependencies in the top-level Makefile. So
+although now variable scoping is acceptable, the other problems of artificially
+dividing the directed acyclic graph into disjoint sub-graphs is present.
+
+</para><para>
+
+These are the problems that Peter Miller identified in the famous paper <link
+xlink:href="https://aegis.sourceforge.net/auug97.pdf">"Recursive Make
+Considered Harmful"</link> already in 1997. Here it is recommended to read this
+paper, as it make some convincing arguments about why it's harmful to not have
+one single directed acyclic graph for the entire directory structure.  An
+interesting obsevation is that Peter Miller's advice is not usually followed.
+The reason probably is that recursive sub-make instances and top-level make.inc
+include files offer very convenient isolation of variable scopes of those
+sub-makes.
+
+</para><para>
+
+Also, parallel make becomes more difficult if there can be numerous sub-makes
+running. GNU make has created a jobserver for such recursive invocations of
+make, so that the top-level make creates a pair of pipe file descriptors. Then
+the write end of the pipe is used to write several token characters. All
+sub-makes can be executed if one token character per sub-make can be borrowed
+from the pipe. Then each sub-make has one free job. If a sub-make can borrow
+more tokens, it can start more jobs. All tokens are eventually returned to the
+jobserver. This usage of recursive make and jobserver is so common that any
+successor of Make can only succeed if it is compatible with this jobserver.
+
+</para><para>
+
+Because of these evident problems in recursive make, we should at least give
+a try to Peter Miller's ideas about inclusive make. Peter Miller claims it is
+not difficult to put into practice, but for complex projects, there are
+difficulties which make it questionable whether make is a good tool for
+creating complex build systems.
+
+</para>
+
       </sect2>
     </sect1>
     <sect1 xml:id="inclusivemake">
