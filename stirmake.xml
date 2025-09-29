@@ -1965,13 +1965,127 @@ And if you want to break outside of a loop not the innermost, @break (and
     </sect1>
     <sect1 xml:id="string">
       <title>String</title>
-      <!-- common operations -->
-      <!-- chomp -->
+
+<para>
+
+Stirmake uses the immutable string data type to represent character strings.
+There is no character data type, so if a data type is needed for character,
+a 1-character long string can be used, or an integer can be used to represent
+character index.
+
+</para><para>
+
+The most common operation with strings is appending:
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+$MID = 'ab'
+$JOINT = '0123456789' . $MID . 'cdef'
+@call @dump($JOINT)
+</programlisting>
+...which prints 0123456789abcdef
+
+</para><para>
+
+String characters can be accessed (but not modified as strings are immutable)
+by specifying the @ operator and index inside square brackets. Note the
+@ operator is present to specify it's string indexing; without it, the indexing
+would be array indexing. It works as follows:
+
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+$STR = '123456789'
+@call @dump($STR[@3])
+</programlisting>
+...which prints 52, which is the character index of '4'. To convert it into
+'4':
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+$STR = '123456789'
+@call @dump(@strfromchr($STR[@3]))
+</programlisting>
+
+</para><para>
+
+If a string may or may not have newline at its end, it can be removed with
+@chomp:
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+$YESNL = "foo\n"
+$NONL = "bar"
+@call @dump(@chomp($YESNL))
+@call @dump(@chomp($NONL))
+</programlisting>
+
+...which prints foo and bar, without the newline in foo.
+
+</para><para>
+
+String length can be queried:
+
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+$STR = '123456789'
+@call @dump($STR[@])
+</programlisting>
+
+...which prints 9.
+
+</para><para>
+
+Strings cannot be compared by operators &lt;, &lt;=, &gt;, &gt;=; ==, != since
+those are reserved for mathematical expressions. String comparison is made
+by using @strcmp which returns negative, 0 or positive:
+
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+$STR1 = "a"
+$STR2 = "z"
+@call @dump(@strcmp($STR1, $STR2))
+@call @dump(@strcmp($STR2, $STR1))
+</programlisting>
+...in this case, the first @strcmp returns -25 since "a" is smaller than "z".
+The second returns 25.
+
+</para><para>
+
+Strings can be converted to lowercase, uppercase and reversed:
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+$MIXEDCASE = "ABCdef"
+@call @dump(@strupper($MIXEDCASE))
+@call @dump(@strlower($MIXEDCASE))
+@call @dump(@strreverse($MIXEDCASE))
+</programlisting>
+
+Strings can be converted to numbers and back to strings:
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+$NUMSTR = "123.5"
+@call @dump($NUMSTR)
+@call @dump(@tonumber($NUMSTR))
+@call @dump(@tostring(@tonumber($NUMSTR)+100))
+</programlisting>
+
+</para>
+
       <!-- strstr, strrep, strlistjoin, strappend, strstrip -->
       <!-- strsub, strgsub, strset, strword, strwordcnt, strwordlist -->
-      <!-- strcmp, strreverse, strupper, strlower, strfromchr -->
-      <!-- string append -->
-      <!-- tostring, tonumber -->
     </sect1>
     <sect1 xml:id="array">
       <title>Array</title>
