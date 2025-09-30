@@ -2712,8 +2712,103 @@ strings) but a list of commands (array of arrays of strings).
     </sect1>
     <sect1 xml:id="functionglobalscope">
       <title>Functions, global variables and scoping</title>
-      <!-- calling one function from another function -->
-      <!-- difference between functions and built-ins -->
+<para>
+
+The previous single-line function definitions with &lt;&gt; operator did not
+need to specify the type of scoping used, lexical or dynamic. The single-line
+functions defined with &lt;&gt; use dynamic scoping as default and may not
+have local variables.
+
+</para><para>
+
+However, there are longer multi-line functions supported by Stirmake that have
+been demonstrated several times already. They use @L before variable name
+if lexical scoping is needed or @D before variable name if dynamic scoping
+is needed. An example:
+
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+$VAR = 1
+$ARG = 2
+@function $FUN1($ARG)
+  @locvar $VAR = 5
+  @dump($ARG)
+  @dump(@L$ARG)
+  @dump(@D$ARG)
+  @dump($VAR)
+  @dump(@L$VAR)
+  @dump(@D$VAR)
+@endfunction
+@beginscope
+  $VAR = 3
+  $ARG = 4
+  @call $FUN1(6)
+@endscope
+</programlisting>
+
+It is recommended for the reader to guess what the function prints before
+running it.
+
+</para><para>
+
+Note that calling functions is similar to accessing a variable. The scoping
+must be specified, or else $FUN1(6) would refer to calling a local variable
+$FUN1 having a function with argument 6. Since functions cannot be defined as
+local variables, this is guaranteed to fail (unless a local variable function
+pointer is created). Note that code outside functions (like the @call $FUN1(6))
+and code in single-line &lt;&gt; delayed evaluation functions uses dynamic
+scoping by default and then the concept of local variables is meaningless. An
+example of calling a function using dynamic and lexical scoping:
+
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+@function $FUN1($ARG)
+  @dump(@L$FUN2($ARG))
+  @dump(@D$FUN2($ARG))
+@endfunction
+@function $FUN2($ARG)
+  @return 1+$ARG
+@endfunction
+@beginscope
+  @function $FUN2($ARG)
+    @return 2+$ARG
+  @endfunction
+  @call $FUN1(6)
+@endscope
+</programlisting>
+
+Again, it is recommended for the reader to guess what this prints, and only
+afterwards run it.
+
+</para><para>
+
+The built-ins specified by @ are different: they are not defined in any scope
+but are built-ins instead. Function pointers to built-ins cannot be done, but
+it's always possible to create a function which only calls a built-in and
+then create function pointers to the call-built-in function:
+
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+@function $STRREVERSE($ARG)
+  @return @strreverse($ARG)
+@endfunction
+
+$FUNPOINTER1=$STRREVERSE
+
+@beginscope
+  $FUNPOINTER2=$STRREVERSE
+  @call @dump($FUNPOINTER1("abc"))
+  @call @dump($FUNPOINTER2("abc"))
+@endscope
+</programlisting>
+
+</para>
     </sect1>
   </chapter>
   <chapter xml:id="commands">
