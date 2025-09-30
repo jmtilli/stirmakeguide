@@ -981,6 +981,18 @@ addition to file.o) and @ignore (don't stop if some dependency file doesn't
 exist yet) are used together.
 
 </para><para>
+
+Note also the patrule. For example, the first patrule for $OBJS means that the
+items in $OBJS must match pattern '%.o' where % is the wildcard. There has to
+be exactly one wildcard in the target. The source files may have zero or one
+wildcard(s) each, and the content from the target wildcard is used to fill the
+possible '%' wildcard in the source files. It is important to note here that
+these pattern rules are not similar to automatic rules in make. Every single
+instantiation needs to occur in $OBJS. It is not possible to leave $OBJS away
+and have stirmake deduce that pattern rule can be used for a target ending in
+.o if there's a wildcard rule with target pattern '%.o'.
+
+</para><para>
 Then let's create a directory prog with prog.c:
 <programlisting>
 #include "hello.h"
