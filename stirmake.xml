@@ -2601,9 +2601,9 @@ means get first or last key.
   @dump(@dictnext($tree, "ef"))
   @dump(@dictprev($tree, "ef"))
   @dump(@dictnext($tree, "eg"))
-  @dump(@dictprev($tree, "eg")) # FIXME error
+  @dump(@dictprev($tree, "eg"))
   @dump(@dictnext($tree, "e"))
-  @dump(@dictprev($tree, "e")) # FIXME error
+  @dump(@dictprev($tree, "e"))
   @dump(@dictnext($tree, @nil))
   @dump(@dictprev($tree, @nil))
 @endfunction
