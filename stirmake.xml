@@ -2626,6 +2626,89 @@ means get first or last key.
     </sect1>
     <sect1 xml:id="functiondelayeval">
       <title>Functions and delayed evaluation</title>
+<para>
+
+Consider the following Stirfile:
+
+<programlisting>
+@toplevel
+@strict
+'hello.o': 'hello.c'
+@	["cc", "-Wall", "-O3", "-c", "-o", $@, $&lt;]
+</programlisting>
+
+...which arguably is not very clean since if new source files are added,
+every file needs to repeat the command used to build it. It is possible
+to slightly eliminate some boilerplate arguments by defining $CC and $CFLAGS:
+
+<programlisting>
+@toplevel
+@strict
+$CC="cc"
+$CFLAGS=["-Wall", "-O3"]
+'hello.o': 'hello.c'
+@	[$(CC), @$(CFLAGS), "-c", "-o", $@, $&lt;]
+</programlisting>
+
+...but there is the problem that $@ and $&lt; need to be repeated every time.
+They cannot be evaluated during the top-level $CFLAGS assignment since at the
+time the $CFLAGS assignment is evaluated, $@ and $&lt; are not yet known. So
+delayed evaluation is what's missing, and the simple assignment syntax of
+Stirmake does not offer that.
+
+</para><para>
+
+Of course, since make supports delayed evaluation, stirmake has to have
+something similar with a very handy syntax, or else stirmake cannot be
+considered the ultimate successor to make. In stirmake, delayed evaluation
+is done by using single-line functions and calling them. How to have
+delayed evaluation is best explained by an example:
+
+<programlisting>
+@toplevel
+@strict
+$CC="cc"
+$CFLAGS=["-Wall", "-O3"]
+$CCCMD&lt;&gt;=[$(CC), @$(CFLAGS), "-c", "-o", $@, $&lt;]
+'hello.o': 'hello.c'
+@	$CCCMD&lt;&gt;
+</programlisting>
+
+Note the &lt;&gt; operator which has dual purpose. In top-level assignments, it
+means "create a function out of this expression which takes no arguments". When
+used in shell commands or any other similar location, &lt;&gt; means "if the
+preceding value is a function, call it with no arguments, otherwise use the
+value as-is".
+
+</para><para>
+
+This way, a lot of boilerplate commands can be avoided. However, there is still
+another problem. If a static library is created out of this hello.o that was
+just compiled, the static library creation requires not one but two commands.
+The first is "rm -f libstatic.a" and the second is "ar rvs libstatic.a
+hello.o". If the first command is omitted, after several repeated runs,
+libstatic.a may end up having some old deleted object files that are no longer
+used. So there is a need for syntax that has several commands in a single
+function. That is supported by modifying the @-tab at the beginning of the
+command line into @@-tab, and defining $ARCMDS accordingly:
+
+<programlisting>
+@toplevel
+@strict
+$CC="cc"
+$CFLAGS=["-Wall", "-O3"]
+$CCCMD&lt;&gt;=[$(CC), @$(CFLAGS), "-c", "-o", $@, $&lt;]
+$ARCMDS&lt;&gt;=[["rm", "-f", $@], ["ar", "rvs", $@, @@suffilter($^, ".o")]]
+'libstatic.a': 'hello.o'
+@@	$ARCMDS&lt;&gt;
+'hello.o': 'hello.c'
+@	$CCCMD&lt;&gt;
+</programlisting>
+
+The @@-tab means that the expression creates not a single command (array of
+strings) but a list of commands (array of arrays of strings).
+
+</para>
     </sect1>
     <sect1 xml:id="functionglobalscope">
       <title>Functions, global variables and scoping</title>
