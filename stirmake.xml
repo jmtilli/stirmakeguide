@@ -2915,7 +2915,7 @@ remove all text files:
 </programlisting>
 
 Now the question is, how does this work? Does it execute @glob before or after
-unzip. The unfortunate news is that stirmake has to have full knowledge of the
+unzip? The unfortunate news is that stirmake has to have full knowledge of the
 build commands before they can be executed, because if the list is equal to
 the previous list of commands and if none of the files have been changed, it
 is pointless to invoke the commands. So, the @glob has to be executed before
