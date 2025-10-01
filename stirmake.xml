@@ -617,6 +617,150 @@ creating complex build systems.
     </sect1>
     <sect1 xml:id="inclusivemake">
       <title>Another approach: one Makefile, module.mk per directory</title>
+<para>
+
+When Peter Miller observed that make has often been misused recursively, he
+advised that a better approach would be to have one top-level Makefile that
+includes module.mk files in subdirectories. The theory is that this would
+make large-scale build systems easy to create. However, due to lack of good
+scoping, the build system creation and maintenance are both hard.
+
+</para><para>
+
+Firstly, if the module.mk based include file approach is chosen, the only
+"make" instance is running for the top-level directory. All commands are
+executed at this directory. So if there's a compiler that does not allow
+manually setting the output file, the compiler may put the output file to
+an incorrect directory, the top-level directory.
+
+</para><para>
+
+Another difficulty is that the variables the modules set are visible to
+subsequent modules, but not modules that have been already imported. So if the
+top-level Makefile sets CFLAGS, in practice no subdirectory can update the
+CFLAGS, since the modification would leak to places it's not supposed to leak.
+So subdirectories foo and bar should define CFLAGS_FOO and CFLAGS_BAR and leave
+the CFLAGS unmodified.
+
+</para><para>
+
+The module.mk include file based approach is extremely difficult across project
+boundaries. If your project has a git submodule, and you want to execute the
+build system of the submodule, in practice it means recursive make, as
+inclusion of files across project boundaries would be fragile, since there's no
+way to enforce general policies like how variables are named to avoid variable
+name clashes. So even die-hard inclusive make proponents switch to recursion in
+across-project-boundaries use cases.
+
+</para><para>
+
+But, despite these drawbacks, it is definitely possible to create a simple
+inclusive build system. One has to keep in mind that all command are executed
+relative to the top-level directory, and that all variables need to have module
+name in them to prevent variable name clashes.
+
+</para><para>
+
+The example build system has lib/hello.h:
+<programlisting>
+#ifndef _HELLO_H_
+#define _HELLO_H_
+
+void hello(void);
+
+#endif
+</programlisting>
+...and lib/hello.c:
+<programlisting>
+#include "hello.h"
+#include &lt;stdio.h&gt;
+void hello(void)
+{
+  printf("Hello world\n");
+}
+</programlisting>
+...and prog/prog.c:
+<programlisting>
+#include "hello.h"
+int main(int argc, char **argv)
+{
+  hello();
+}
+</programlisting>
+
+</para><para>
+
+Now the build system for this structure consists of top-level Makefile:
+<programlisting>
+CC?="cc"
+RM?="rm"
+AR?="ar"
+CFLAGS += -Wall -O3
+
+.PHONY: all clean
+all: lib/all prog/all
+
+include lib/module.mk
+include prog/module.mk
+
+clean: lib/clean prog/clean
+</programlisting>
+...and lib/module.mk:
+<programlisting>
+DIR_LIB=lib
+OBJS_LIB=$(DIR_LIB)/hello.o
+DEPS_LIB=$(patsubst %.o,%.d,$(OBJS_LIB))
+
+.PHONY: lib/all lib/clean
+
+$(DIR_LIB)/all: $(DIR_LIB)/libhello.a
+
+$(OBJS_LIB): %.o: %.c %.d
+	$(CC) $(CFLAGS) $(CFLAGS_LIB) -c -o $@ $&lt;
+$(DEPS_LIB): %.d: %.c
+	$(CC) $(CFLAGS) $(CFLAGS_LIB) -MM -MP -MT $*.d -MT $*.o -o $@ $&lt;
+
+$(DIR_LIB)/libhello.a: $(OBJS_LIB)
+	$(RM) -f $@
+	$(AR) rvs $@ $(filter %.o,$^)
+
+$(DIR_LIB)/clean:
+	rm -f $(DIR_LIB)/libhello.a $(OBJS_LIB) $(DEPS_LIB)
+
+-include $(DIR_LIB)/*.d
+</programlisting>
+...and prog/module.mk:
+<programlisting>
+DIR_PROG=prog
+OBJS_PROG=$(DIR_PROG)/prog.o
+DEPS_PROG=$(patsubst %.o,%.d,$(OBJS_PROG))
+CFLAGS_PROG=-Ilib
+
+.PHONY: $(DIR_PROG)/all $(DIR_PROG)/clean
+
+$(DIR_PROG)/all: $(DIR_PROG)/prog
+
+$(OBJS_PROG): %.o: %.c %.d
+	$(CC) $(CFLAGS) $(CFLAGS_PROG) -c -o $@ $&lt;
+$(DEPS_PROG): %.d: %.c
+	$(CC) $(CFLAGS) $(CFLAGS_PROG) -MM -MP -MT $*.d -MT $*.o -o $@ $&lt;
+
+$(DIR_PROG)/prog: $(OBJS_PROG) lib/libhello.a
+	$(CC) $(CFLAGS) $(CFLAGS_PROG) -o $@ $(filter %.o,$^) $(filter %.a,$^)
+
+$(DIR_PROG)/clean:
+	rm -f $(DIR_PROG)/prog $(OBJS_PROG) $(DEPS_PROG)
+
+-include $(DIR_PROG)/*.d
+</programlisting>
+
+Note that if subdirectories need to have different CFLAGS, for example by
+having custom -I include path arguments, the rules to compile .o and .d from .c
+need to be specified separately in each subdirectory. There is no clean way to
+specify them only once, since then subdirectories would use the same CFLAGS
+everywhere.
+
+</para>
       <!-- refer to makedirsep: commands are executed in subdirectory -->
       <!-- one common namespace -->
       <!-- dangers of one common namespace when including sub-projects: this is where even die-hard inclusive make proponents switch to recursion -->
