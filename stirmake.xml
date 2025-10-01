@@ -1347,7 +1347,7 @@ For parallel GNU make, the best we can do (ugh!) is:
 test.lex.c: test.lex.l
 	flex --outfile=$@ --header-file=/dev/null $&lt;
 test.lex.h: test.lex.l
-	flex --outfile=/dev/null --header-file=@sufsubone($@,".c",".h") $&lt;
+	flex --outfile=/dev/null --header-file=$@ $&lt;
 text.lex.d: test.lex.h
 text.lex.o: test.lex.h
 </programlisting>
