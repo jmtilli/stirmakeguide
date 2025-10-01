@@ -2835,6 +2835,51 @@ $FUNPOINTER1=$STRREVERSE
       <title>Build command, timestamp and file size database</title>
 <para>
 
+Stirmake has database which tells what commands have been executed to create
+the targets, and full timestamp and file size information for the targets. This
+default mode is used whenever -e is not specified as the command line argument.
+The uppercase -E on the other hand explicitly turns on this default mode. If
+-e is used, the database contains only build commands but not file timestamps
+and file sizes. The version of database is in this case @v1@.
+
+</para><para>
+
+An example of the database when -E is used:
+<programlisting>
+@v2@
+
+"." "prog":
+	"NI" "E" "NM" "cc" "-Wall" "-O3" "-o" "prog" "hello.o"
+
+"." "hello.o":
+	"NI" "E" "NM" "cc" "-Wall" "-O3" "-c" "-o" "hello.o" "hello.c"
+
+"." "hello.d":
+	"NI" "E" "NM" "cc" "-Wall" "-O3" "-MM" "-o" "hello.d" "hello.c"
+
+"hello.d" = 17 1759334220 851355669
+
+"hello.c" = 27 1759334155 483267579
+
+"hello.o" = 1456 1759334220 879355707
+
+"prog" = 16464 1759334220 895355729
+</programlisting>
+
+</para><para>
+
+The @v2@ specifier at beginning tells the version (v1: just commands, v2: also
+file sizes and timestamps). The first three files are mentioned along with the
+commands that were used to build the files. The first "NI", "E", "NM" are
+command settings (no-ignore / ignore, echo / no-echo, no-make / is-make) and
+the rest is the command that was used.
+
+</para><para>
+
+The last four files are mentioned along with their sizes in bytes and the
+modification timestamp of the files. If the file size or timestamp differs,
+it can be concluded that rebuild is necessary.
+
 </para>
     </sect1>
     <sect1>
