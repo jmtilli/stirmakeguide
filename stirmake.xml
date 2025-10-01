@@ -767,6 +767,73 @@ everywhere.
     </sect1>
     <sect1 xml:id="parallelmake">
       <title>Parallel make, jobserver and lack of multiple targets</title>
+<para>
+
+Parallel make using the inclusive approach where one process sees the entire
+directed acyclic graph, is simple. The make needs to be called with the -j4
+option where 4 is the CPU core count.
+
+</para><para>
+
+One difficulty with parallel make is that GNU make is incapable of specifying
+rules which create simultaneously more than one target. Code generation tools
+like byacc, bison or flex often create a C source file and a header file at
+the same time. If the command supports setting both output files, it is possible
+to invoke it twice, once with C file as /dev/null, another time with header file
+as /dev/null:
+<programlisting>
+test.lex.c: test.lex.l
+	flex --outfile=$@ --header-file=/dev/null $&lt;
+test.lex.h: test.lex.l
+	flex --outfile=/dev/null --header-file=$@ $&lt;
+text.lex.d: test.lex.h
+text.lex.o: test.lex.h
+</programlisting>
+...but however, this way is not preferred since the command is executed twice
+and consumes twice the CPU time an optimal implementation would consume.
+
+</para><para>
+
+Also, this approach to alternately set C file and header file as /dev/null
+would not work for byacc. Byacc takes a prefix, given with the command-line
+argument -b, and creates both .c and .h file for this prefix. Theoretically it
+would be possible to execute byacc twice, once with prefix as "tmpc" and
+another with prefix as "tmph", and then rename the files to their permanent
+names, but unfortunately byacc embeds C preprocessor directives which tell the
+line number of errors, and those embedded directive would have the "tmpc" or
+"tmph".
+
+</para><para>
+
+Another possibility would be to just simply add the following:
+<programlisting>
+test.lex.c: test.lex.l
+	flex --outfile=$@ --header-file=$(patsubst %.c,%.h,$@) $&lt;
+text.lex.h: text.lex.c
+</programlisting>
+...but however, if text.lex.h is removed then with text.lex.c retained, make
+would be incapable of creating it again.
+
+</para><para>
+
+Recursive uses of GNU make also need a certain trick, jobserver, to function
+well. The problem with recursive make is that if it's invoked with -j4 for
+example, each submake could create 4 jobs. If there are 4 submakes
+simultaneously running, 16 jobs could be created at the worst simultaneously.
+This is fixed by a jobserver, a pipe where characters for possible jobs are
+added. Before sub-make is invoked, the caller must have a token for starting
+the sub-make. Each sub-make has one "free" job thanks to the token needed to
+start them, but running multiple simultaneous jobs would require obtaining more
+tokens form the jobserver. The tokens are borrowed and eventually returned back
+to the jobserver when all of the jobs have been executed.
+
+</para><para>
+
+In order to give jobserver details to sub-makes, it is important that sub-makes
+are started with $(MAKE), not with "make". The $(MAKE) variable is what enables
+the jobserver.
+
+</para>
     </sect1>
   </chapter>
   </part>
