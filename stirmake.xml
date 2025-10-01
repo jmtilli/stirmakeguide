@@ -2813,6 +2813,159 @@ $FUNPOINTER1=$STRREVERSE
   </chapter>
   <chapter xml:id="commands">
     <title>How Stirmake executes its commands</title>
+    <sect1>
+      <title>Different ways of executing commands</title>
+<para>
+
+</para>
+    </sect1>
+    <sect1>
+      <title>The dangers of shell expansion</title>
+<para>
+
+</para>
+    </sect1>
+    <sect1>
+      <title>Invoking shell manually</title>
+<para>
+
+</para>
+    </sect1>
+    <sect1>
+      <title>Build command, timestamp and file size database</title>
+<para>
+
+</para>
+    </sect1>
+    <sect1>
+      <title>Move madness</title>
+<para>
+
+Let us assume that you have the following Makefile:
+
+<programlisting>
+hello: hello.c
+	cc -o hello hello.c
+</programlisting>
+
+</para><para>
+
+You want to take a backup of hello.c before you start modifying it. Then you
+modify it and run "make". Then for some reason you want to restore the old
+unmodified version. Then you run "make", and find that "make" won't build
+anything:
+<programlisting>
+cp hello.c hello.c.bak
+$EDITOR hello.c
+make
+mv hello.c.bak hello.c
+make
+</programlisting>
+
+</para><para>
+
+In this case, the cp command creates a new timestamp for the copy, but it's
+before the timestamp of edited hello.c and before the timestamp of the binary
+hello which make created. However, mv is different from cp. Whereas cp creates
+a new timestamp, mv does a rename and doesn't touch the timestamp. Therefore,
+after the mv command, hello.c timestamp and possibly file size did change, but
+it didn't become newer than the timestamp of the hello binary. Therefore, with
+standard make, hello won't be rebuilt. This anomaly can be called
+<emphasis>move madness</emphasis>.
+
+</para><para>
+
+Stirmake is immune to move madness, since stirmake has a file size, command
+and timestamp database. In this example of move madness, at least the timestamp
+of hello.c did change although it didn't become newer than the timestamp of
+hello binary. Also it's possible the file size changed. In this case, stirmake
+has enough information to conclude that the file has in fact changed, and
+does a rebuild.
+
+</para>
+    </sect1>
+    <sect1>
+      <title>Command options: ignore, noecho, ismake, automatic make detection</title>
+<para>
+
+</para>
+    </sect1>
+    <sect1>
+      <title>@glob and the dangers of @glob in middle of many commands</title>
+<para>
+
+Stirmake has a feature @glob to evaluate shell glob patterns, using the glob()
+interface without actually invoking the shell. However, its usage is somewhat
+limited as a list of commands has to have all commands evaluated before the
+commands can be executed, because stirmake has command database and needs to
+compare the current list of commands against the list as of previous
+invocation.
+
+</para><para>
+
+Consider for example that you have a zip file and you want to unzip it but
+remove all text files:
+
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'unzip': 'zip.zip'
+@	["unzip", "zip.zip"]
+@	["rm", @@glob("*.txt")]
+</programlisting>
+
+Now the question is, how does this work? Does it execute @glob before or after
+unzip. The unfortunate news is that stirmake has to have full knowledge of the
+build commands before they can be executed, because if the list is equal to
+the previous list of commands and if none of the files have been changed, it
+is pointless to invoke the commands. So, the @glob has to be executed before
+unzip is called. Therefore, the list of text files does not have any text files
+that were created by unzipping the archive.
+
+</para><para>
+
+This problem can be avoided by using the shell:
+
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'unzip': 'zip.zip'
+@	["unzip", "zip.zip"]
+@	["sh", "-c", "rm *.txt"]
+</programlisting>
+
+Now since the glob evaluation result isn't part of the command, this works fine
+since stirmake doesn't have to evaluate *.txt but rather the shell evaluates
+it. What *.txt evaluates to, isn't part of the build command database.
+
+</para><para>
+
+Where glob is useful is for example automatic creation of rules from .c to .d
+and .o:
+<programlisting>
+@toplevel
+@strict
+$CC="cc"
+$CFLAGS=["-Wall", "-O3"]
+$SRC=@glob("*.c")
+$DEP=@sufsuball($SRC, ".c", ".d")
+$OBJ=@sufsuball($SRC, ".c", ".o")
+'prog': $(OBJ)
+@	[$CC, @$CFLAGS, "-o", $@, @@suffilter($^, ".o")]
+@patrule: $(OBJ): '%.o': '%.c' '%.d'
+@	[$CC, @$CFLAGS, "-c", "-o", $@, $&lt;]
+@patrule: $(DEP): '%.d': '%.c'
+@	[$CC, @$CFLAGS, "-MM", "-o", $@, $&lt;]
+@cdepincludes @autophony @autotarget @ignore $DEP
+</programlisting>
+
+In this example, the Stirfile does not need to be modified whenever a new
+.c file is created to the directory. It is up to the reader to decide whether
+this feature in Stirfile is good, or whether Stirfile should have an explicit
+list of what to compile.
+
+</para>
+    </sect1>
     <!-- tab, at-tab, at-at-tab -->
     <!-- the dangers of shell expansion -->
     <!-- shell can still be manually invoked -->
