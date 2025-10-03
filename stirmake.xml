@@ -3028,17 +3028,85 @@ $FUNPOINTER1=$STRREVERSE
       <title>Different ways of executing commands</title>
 <para>
 
+Make executes its commands always via the Bourne shell /bin/sh. Stirmake can
+either use the shell or omit its use, at the Stirfile author's preference.
+
+</para><para>
+
+The same syntax that is used in make too executes the command after tabulator
+via shell:
+
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all': 'hello'
+'hello': 'hello.c'
+	cc -o $@ $&lt;
+</programlisting>
+
+</para><para>
+
+In this case, the command is sh -c "cc -o $@ $&lt;". To omit shell and invoke
+the compiler directly, you can use the @-tab syntax, which takes a list of
+command-line arguments:
+
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all': 'hello'
+'hello': 'hello.c'
+@	["cc", "-o", $@, $&lt;]
+</programlisting>
+
+</para><para>
+
+Also sometimes you may want to include more than one command in a single
+line. It is possible with the @@-tab syntax:
+
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all': 'hello'
+'libhello.a': 'hello.o'
+@@	[["rm", "-f", $@], ["ar", "rvs", $@, @@suffilter($^, ".o")]]
+</programlisting>
+
+In this case, after the tabulator you have an array of arrays of strings, not a
+simple array of strings.
+
 </para>
     </sect1>
     <sect1>
       <title>The dangers of shell expansion</title>
 <para>
 
+Shell expansion may not always do what you want. Firstly, spaces in file names
+cause the file name to be split to multiple command-line arguments. The shell
+also assigns special meanings to many characters like `, \ and $. Stirmake does
+not have any attempt at shell escaping to support for example dollar signs
+in file names. Stirmake's way to allow dollar signs in file names is to not use
+shell, but instead invoke the compiler directly with no shell inbetween.
+
 </para>
     </sect1>
     <sect1>
       <title>Invoking shell manually</title>
 <para>
+
+Of course, with the @-tab syntax it's possible to specify the shell manually:
+
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all': 'hello'
+'hello': 'hello.c'
+@	["sh", "-c", "cc -o " . $@ . " " . $&lt;]
+</programlisting>
+
+</para><para>
+
+Note that the -c option takes only one argument, so everything has to be
+concatenated to a string with space as argument delimiter.
 
 </para>
     </sect1>
