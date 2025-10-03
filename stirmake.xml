@@ -3212,6 +3212,69 @@ does a rebuild.
       <title>Command options: ignore, noecho, ismake, automatic make detection</title>
 <para>
 
+Stirmake supports three command options: @ignore, @noecho and @ismake.
+
+</para><para>
+
+Normally, all commands that stirmake executes are echoed to standard output,
+unless the -s (silent) option is given as argument. However, individual command
+echoing can be disabled with @noecho. This is useful if the list of commands
+has an "echo" command, which would then be echoed twice: first the full command
+name, then the argument to "echo". How to do this:
+
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+@	@noecho ["echo", "foo"]
+</programlisting>
+
+</para><para>
+
+Also, normally, a command that fails stops the build process. All commands must
+return "true" exit status, 0, not "false" (which would be nonzero). To allow
+command returning false to not stop the build, use @ignore:
+
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+@	@ignore ["false"]
+@	@noecho ["echo", "false was ignored"]
+</programlisting>
+
+</para><para>
+
+Stirmake needs to know if the sub-process it executes is GNU make. The reason
+being that GNU make requires a jobserver, which stirmake has to offer via
+environment variables. Normally, stirmake compares the program name with a
+built-in list of known GNU make names:
+<itemizedlist>
+<listitem>make</listitem>
+<listitem>gmake</listitem>
+<listitem>/usr/bin/make</listitem>
+<listitem>/usr/bin/gmake</listitem>
+<listitem>/usr/local/bin/make</listitem>
+<listitem>/usr/local/bin/gmake</listitem>
+<listitem>/usr/pkg/bin/make</listitem>
+<listitem>/usr/pkg/bin/gmake</listitem>
+<listitem>/opt/bin/make</listitem>
+<listitem>/opt/bin/gmake</listitem>
+<listitem>/opt/gnu/bin/make</listitem>
+<listitem>/opt/gnu/bin/gmake</listitem>
+<listitem>/bin/make</listitem>
+<listitem>/bin/gmake</listitem>
+</itemizedlist>
+
+However, if GNU make is invoked with a command that is not present in this
+list, it is possible to mark the command as GNU make with @ismake:
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+@	@ismake ["/opt/bin/gnumake", "-C", "subdir"]
+</programlisting>
+
 </para>
     </sect1>
     <sect1>
