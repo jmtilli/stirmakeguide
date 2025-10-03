@@ -3466,6 +3466,79 @@ but not cleaning only binaries, it's possible to add a hook that fails:
   </chapter>
   <chapter xml:id="conditional">
     <title>Conditional compilation</title>
+<para>
+
+One of the basic features of stirmake is conditional compilation. Both rules
+and additional dependencies can be put inside top-level @if statements. Also if
+you use pattern rules, they need to be instantiated by an array of filenames,
+and obviously that array can be modified inside @if statements.
+
+</para><para>
+
+An example of conditional compilation with pattern rules:
+
+<programlisting>
+@toplevel
+@strict
+$IS_ARM=@false
+$MACHINE `= ["cc", "-dumpmachine"]
+$MACHINE = @chomp($MACHINE)
+@if(@strcmp(@substr($MACHINE, 0, 4), "arm-") == 0)
+$IS_ARM=@true
+@endif
+
+$OBJS = ["file1.o", "platformindependent.o"]
+@if($IS_ARM)
+$OBJS += ["armneonimpl.o"]
+@endif
+
+@phonyrule: 'all': 'libcommon.a'
+
+@patrule: $OBJS: '%.o': '%.c'
+@	["cc", "-c", "-o", $@, $&lt;]
+
+'libcommon.a': $(OBJS)
+@	["rm", "-f", $@]
+@	["ar", "rvs", $@, @@suffilter($^, ".o")]
+</programlisting>
+
+In this case, if the "cc -dumpmachine" command prints arm-linux-gnueabihf, or
+something else that begins with arm-, the file armneonimpl.o is compiled in.
+
+</para><para>
+
+Also, entire rules and additional dependencies specified with @deponly can be
+inside top-level @if statements:
+
+<programlisting>
+@toplevel
+@strict
+$IS_ARM=@false
+$MACHINE `= ["cc", "-dumpmachine"]
+$MACHINE = @chomp($MACHINE)
+@if(@strcmp(@substr($MACHINE, 0, 4), "arm-") == 0)
+$IS_ARM=@true
+@endif
+
+@phonyrule: 'all': 'libcommon.a'
+
+$OBJS = ["file1.o", "platformindependent.o"]
+@patrule: $OBJS: '%.o': '%.c'
+@	["cc", "-c", "-o", $@, $&lt;]
+
+@if($IS_ARM)
+'armneonimpl.o': 'armneonimpl.c'
+@	["cc", "-c", "-o", $@, $&lt;]
+@deponly: 'libcommon.a': 'armneonimpl.o'
+@endif
+
+
+'libcommon.a': $(OBJS)
+@	["rm", "-f", $@]
+@	["ar", "rvs", $@, @@suffilter($^, ".o")]
+</programlisting>
+
+</para>
   </chapter>
   <chapter xml:id="exampleprojects">
     <title>Example projects</title>
