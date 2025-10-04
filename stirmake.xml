@@ -3543,25 +3543,487 @@ $OBJS = ["file1.o", "platformindependent.o"]
   <chapter xml:id="exampleprojects">
     <title>Example projects</title>
     <sect1>
-      <title>abce</title>
-    </sect1>
-    <sect1>
-      <title>steamingatof</title>
-    </sect1>
-    <sect1>
-      <title>prettyftoa</title>
-    </sect1>
-    <sect1>
-      <title>rlctrans</title>
-    </sect1>
-    <sect1>
       <title>mploop</title>
+<para>
+
+<link xlink:href="https://github.com/jmtilli/mploop">mploop</link> is perhaps
+the simplest project that can be compiled with Stirmake. The main program is
+written in Python and thus requires no compilation, but there is also
+mploopplayer, written in C, in a single C file.
+
+</para><para>
+
+The top-level Stirfile contains:
+
+<programlisting>
+@toplevel
+@strict
+
+$CC = "cc"
+$CFLAGS = ["-Wall", "-Wextra", "-O3", "-g"]
+
+@phonyrule: 'all': 'mploopplayer/all'
+
+@dirinclude ["mploopplayer"]
+</programlisting>
+
+And the subfile mploopplayer/Stirfile contains:
+<programlisting>
+@subfile
+@strict
+
+$LIBS = ["-lavformat", "-lavcodec", "-lavutil", "-lSDL2", "-lm"]
+
+@phonyrule: 'all': 'mploopplayer'
+
+@distrule: 'mploopplayer': 'mploopplayer.c'
+@	[$(CC), "-o", "mploopplayer", "mploopplayer.c", @$(CFLAGS), @$(LIBS)]
+</programlisting>
+
+It is important to note here that the top-level Stirfile needs to contain
+at least the phonyrule all, since without rules, smka will not do anything.
+The subfile contains rule referenced as mploopplayer/all from top-level but as
+all from subfile.
+
+</para>
     </sect1>
     <sect1>
       <title>quictest</title>
+<para>
+
+<link xlink:href="https://github.com/jmtilli/quictest">quictest</link> contains
+testing code to extract server name indication from initial QUIC packets. A
+peculiarity of it is that some files use AES-NI instructions and need
+additional compiler flags. No subdirectories are used.
+
+</para><para>
+
+The Stirfile is as follows:
+
+<programlisting>
+@toplevel
+@strict
+
+$CC ?= "cc"
+$CFLAGS ?= ["-O4", "-g", "-std=gnu11"]
+$CFLAGS_NI ?= ["-march=skylake", "-msse", "-msse2", "-msse3", "-mssse3", "-msse4", "-msse4.1", "-msse4.2", "-mavx", "-mavx2"]
+$LDFLAGS ?= []
+
+$SOURCES = ["aes.c", "aestest.c", "hkdf.c", "hkdftest.c", "quictest.c", "sha_hp.c", "sha_pd.c", "rbtree.c"]
+$SOURCES_NI = ["aes_aesni.c"]
+$OBJS = @sufsuball($SOURCES, ".c", ".o")
+$DEPS = @sufsuball($SOURCES, ".c", ".d")
+$OBJS_NI = @sufsuball($SOURCES_NI, ".c", ".o")
+$DEPS_NI = @sufsuball($SOURCES_NI, ".c", ".d")
+
+@phonyrule: 'all': 'aestest' 'hkdftest' 'quictest'
+
+'aestest': 'aestest.o' 'aes.o' 'aes_aesni.o'
+@	["cc", @$CFLAGS, @$LDFLAGS, "-o", $@, @$^]
+
+'quictest': 'quictest.o' 'aes.o' 'aes_aesni.o' 'hkdf.o' 'sha_hp.o' 'sha_pd.o' 'rbtree.o'
+@	["cc", @$CFLAGS, @$LDFLAGS, "-o", $@, @$^]
+
+'hkdftest': 'hkdftest.o' 'hkdf.o' 'sha_hp.o' 'sha_pd.o'
+@	["cc", @$CFLAGS, @$LDFLAGS, "-o", $@, @$^]
+
+@patrule: $(OBJS): '%.o': '%.c' '%.d'
+@	[$(CC), @$(CFLAGS), "-c", "-o", $@, $&lt;]
+
+@patrule: $(DEPS): '%.d': '%.c'
+@	[$(CC), @$(CFLAGS), "-MM", "-o", $@, $&lt;]
+
+@patrule: $(OBJS_NI): '%.o': '%.c' '%.d'
+@	[$(CC), @$(CFLAGS), @$(CFLAGS_NI), "-c", "-o", $@, $&lt;]
+
+@patrule: $(DEPS_NI): '%.d': '%.c'
+@	[$(CC), @$(CFLAGS), @$(CFLAGS_NI), "-MM", "-o", $@, $&lt;]
+
+@cdepincludes @autophony @autotarget @ignore [@$(DEPS), @$(DEPS_NI)]
+</programlisting>
+
+</para>
+    </sect1>
+    <sect1>
+      <title>steamingatof</title>
+<para>
+
+<link
+xlink:href="https://github.com/jmtilli/streamingatof">streamingatof</link> is
+very simple, it contains only one program and one library file. The Stirfile is
+as follows:
+
+<programlisting>
+@toplevel
+@strict
+
+@fileinclude @ignore "opts.smk"
+
+$CC ?= "cc"
+$CFLAGS ?= ["-g", "-O2", "-Wall", "-Wextra", "-Wsign-conversion", "-Wno-missing-field-initializers", "-Wno-unused-parameter", "-Wshadow", "-Wstrict-prototypes", "-Wmissing-prototypes", "-Wpointer-arith", "-Werror", "-std=gnu11", "-fPIC"]
+
+$(SRC_LIB) = ["streamingatof.c"]
+$(SRC_PROG) = ["test.c"]
+
+$(SRC) = [@$(SRC_LIB), @$(SRC_PROG)]
+$(OBJ_LIB) = @sufsuball($(SRC_LIB), ".c", ".o")
+$(OBJ) = @sufsuball($(SRC), ".c", ".o")
+$(DEP) = @sufsuball($(SRC), ".c", ".d")
+$(PROG) = @sufsuball($(SRC_PROG), ".c", "")
+
+@phonyrule: 'all': 'libstreamingatof.a' $(PROG)
+
+@patrule: $(PROG): '%': '%.o' 'libstreamingatof.a'
+@	[$(CC), @$(CFLAGS), "-o", $@, $&lt;, 'libstreamingatof.a']
+
+@patrule: $(OBJ): '%.o': '%.c' '%.d'
+@	[$(CC), @$(CFLAGS), "-c", "-o", $@, $&lt;]
+
+@patrule: $(DEP): '%.d': '%.c'
+@	[$(CC), @$(CFLAGS), "-MM", "-o", $@, $&lt;]
+
+'libstreamingatof.a': $(OBJ_LIB)
+@	["rm", "-f", $@]
+@	["ar", "rvs", $@, @@suffilter($^, ".o")]
+
+@phonyrule: 'unit': 'test'
+@	["./test"]
+
+@cdepincludes @autophony @autotarget @ignore [@$(DEP)]
+</programlisting>
+
+An option to include possible opts.smk to change options is present. Also note
+the phonyrule unit which executes unit tests.
+
+</para>
+    </sect1>
+    <sect1>
+      <title>prettyftoa</title>
+<para>
+
+<link xlink:href="https://github.com/jmtilli/prettyftoa">prettyftoa</link> is
+very similar to streamingatof. It contains one library file and one unit test
+program. The Stirfile is as follows:
+
+<programlisting>
+@toplevel
+@strict
+
+@fileinclude @ignore "opts.smk"
+
+$CC ?= "cc"
+$CFLAGS ?= ["-g", "-O2", "-Wall", "-Wextra", "-Wsign-conversion", "-Wno-missing-field-initializers", "-Wno-unused-parameter", "-Wshadow", "-Wstrict-prototypes", "-Wmissing-prototypes", "-Wpointer-arith", "-Werror", "-std=gnu11", "-fPIC"]
+
+$(SRC_LIB) = ["prettyftoa.c"]
+$(SRC_PROG) = ["test.c"]
+
+$(SRC) = [@$(SRC_LIB), @$(SRC_PROG)]
+$(OBJ_LIB) = @sufsuball($(SRC_LIB), ".c", ".o")
+$(OBJ) = @sufsuball($(SRC), ".c", ".o")
+$(DEP) = @sufsuball($(SRC), ".c", ".d")
+$(PROG) = @sufsuball($(SRC_PROG), ".c", "")
+
+@phonyrule: 'all': 'libprettyftoa.a' $(PROG)
+
+@patrule: $(PROG): '%': '%.o' 'libprettyftoa.a'
+@	[$(CC), @$(CFLAGS), "-o", $@, $&lt;, 'libprettyftoa.a']
+
+@patrule: $(OBJ): '%.o': '%.c' '%.d'
+@	[$(CC), @$(CFLAGS), "-c", "-o", $@, $&lt;]
+
+@patrule: $(DEP): '%.d': '%.c'
+@	[$(CC), @$(CFLAGS), "-MM", "-o", $@, $&lt;]
+
+'libprettyftoa.a': $(OBJ_LIB)
+@	["rm", "-f", $@]
+@	["ar", "rvs", $@, @@suffilter($^, ".o")]
+
+@phonyrule: 'unit': 'test'
+@	["./test"]
+
+@cdepincludes @autophony @autotarget @ignore [@$(DEP)]
+</programlisting>
+
+</para>
+    </sect1>
+    <sect1>
+      <title>rlctrans</title>
+<para>
+
+<link xlink:href="https://github.com/jmtilli/rlctrans">rlctrans</link> contains
+one library file and a huge number of programs that utilize the library. The
+Stirfile is as follows:
+
+<programlisting>
+@toplevel
+@strict
+
+$SRC_LIB=["libsimul.c"]
+$SRC_PROG=["buck.c", "buckramp.c", "buckgood.c", "inverterpwm.c", "rectifier.c", "transformer.c", "forward.c", "forwardgood.c", "flyback.c", "flybackgood.c", "pfcboost.c", "rectifier3.c", "pfc3.c", "inverterpwm3.c", "pfcsimple3.c", "shockleyrectifier.c", "boostgood.c", "buckboostgood.c"]
+$PROG=@sufsuball($SRC_PROG, ".c", "")
+$SRC=[@$SRC_LIB, @$SRC_PROG]
+$OBJ=@sufsuball($SRC, ".c", ".o")
+$OBJ_LIB=@sufsuball($SRC_LIB, ".c", ".o")
+$DEP=@sufsuball($SRC, ".c", ".d")
+$CC="cc"
+$AR="ar"
+$RM="rm"
+$CFLAGS=["-Wall", "-O3", "-g"]
+$LIBS=["-llapack", "-lm"]
+
+@phonyrule: 'all': $PROG
+
+@patrule: $OBJ: '%.o': '%.c' '%.d'
+@	[$CC, @$CFLAGS, "-c", "-o", $@, $&lt;]
+
+@patrule: $DEP: '%.d': '%.c'
+@	[$CC, @$CFLAGS, "-M", "-o", $@, $&lt;]
+
+'libsimul.a': $OBJ_LIB
+@	[$RM, "-f", $@]
+@	[$AR, "rvs", $@, @$^]
+
+@patrule: $PROG: '%': '%.o' 'libsimul.a'
+@	[$CC, "-o", $@, @@suffilter($^, ".o"), @@suffilter($^, ".a"), @$LIBS]
+
+@cdepincludes @autophony @autotarget @ignore $DEP
+</programlisting>
+
+</para>
     </sect1>
     <sect1>
       <title>jmalloc</title>
+<para>
+
+<link xlink:href="https://github.com/Aalto5G/jmalloc">jmalloc</link> contains
+several programs and a subdirectory realapp:
+
+<programlisting>
+@toplevel
+@strict
+
+$CC ?= "cc"
+$CFLAGS ?= ["-O3"]
+$LDFLAGS ?= []
+
+@phonyrule: 'all': 'jmalloc2' 'jmalloc' 'lmalloc' 'jmalloc2complex' 'lmalloccomplex' 'realapp/all'
+
+'jmalloc2': 'jmalloc2.c'
+@	["cc", @$CFLAGS, @$LDFLAGS, "-o", $@, @$^]
+
+'jmalloc': 'jmalloc.c'
+@	["cc", @$CFLAGS, @$LDFLAGS, "-o", $@, @$^]
+
+'lmalloc': 'lmalloc.c'
+@	["cc", @$CFLAGS, @$LDFLAGS, "-o", $@, @$^]
+
+'jmalloc2complex': 'jmalloc2complex.c'
+@	["cc", @$CFLAGS, @$LDFLAGS, "-o", $@, @$^]
+
+'lmalloccomplex': 'lmalloccomplex.c'
+@	["cc", @$CFLAGS, @$LDFLAGS, "-o", $@, @$^]
+
+@dirinclude 'realapp'
+</programlisting>
+
+The realapp/Stirfile subfile is as follows:
+<programlisting>
+@subfile
+@strict
+
+@phonyrule: 'all': 'allocreal' 'allocstd' 'allocrealset' 'allocstdset'
+
+$CC ?= "cc"
+$CFLAGS ?= ["-O3"]
+$LDFLAGS ?= []
+
+'ops.c': 'allocanalyze.py' 'allocs.txt'
+@	["sh", "-c", "python allocanalyze.py ops > ops.c"]
+
+'allocreal.c': 'allocanalyze.py' 'allocs.txt'
+@	["sh", "-c", "python allocanalyze.py jm > allocreal.c"]
+
+'allocrealset.c': 'allocanalyze.py' 'allocs.txt'
+@	["sh", "-c", "python allocanalyze.py jmset > allocrealset.c"]
+
+'allocstd.c': 'allocanalyze.py' 'allocs.txt'
+@	["sh", "-c", "python allocanalyze.py std > allocstd.c"]
+
+'allocstdset.c': 'allocanalyze.py' 'allocs.txt'
+@	["sh", "-c", "python allocanalyze.py stdset > allocstdset.c"]
+
+'allocreal.o': 'allocreal.c'
+@	["cc", @$CFLAGS, "-c", "-o", $@, $&lt;]
+
+'allocstd.o': 'allocstd.c'
+@	["cc", @$CFLAGS, "-c", "-o", $@, $&lt;]
+
+'allocrealset.o': 'allocrealset.c'
+@	["cc", @$CFLAGS, "-c", "-o", $@, $&lt;]
+
+'allocstdset.o': 'allocstdset.c'
+@	["cc", @$CFLAGS, "-c", "-o", $@, $&lt;]
+
+'ops.o': 'ops.c'
+@	["cc", @$CFLAGS, "-c", "-o", $@, $&lt;]
+
+'jmalloccore.o': 'jmalloccore.c'
+@	["cc", @$CFLAGS, "-c", "-o", $@, $&lt;]
+
+'allocreal': 'allocreal.o' 'jmalloccore.o' 'ops.o'
+@	["cc", @$CFLAGS, @$LDFLAGS, "-o", $@, @$^]
+
+'allocstd': 'allocstd.o' 'jmalloccore.o' 'ops.o'
+@	["cc", @$CFLAGS, @$LDFLAGS, "-o", $@, @$^]
+
+'allocrealset': 'allocrealset.o' 'jmalloccore.o' 'ops.o'
+@	["cc", @$CFLAGS, @$LDFLAGS, "-o", $@, @$^]
+
+'allocstdset': 'allocstdset.o' 'jmalloccore.o' 'ops.o'
+@	["cc", @$CFLAGS, @$LDFLAGS, "-o", $@, @$^]
+</programlisting>
+
+</para><para>
+
+It is evident from the subfile that there is some repetition that could be
+eliminated easily. Also, note that shell redirections require actually invoking
+the Bourne shell with the command "sh -c".
+
+</para>
+    </sect1>
+    <sect1>
+      <title>abce</title>
+<para>
+
+By far, the most complex Stirfile of these examples is the stirfile of <link
+xlink:href="https://github.com/Aalto5G/abce">abce</link>. It takes commands
+and flags $CC, $CFLAGS, $FLEX and $BYACC from the parent Stirfile (it is
+designed to be includable in Stirfiles of other projects), with fallback to
+environment and if they have not been defined either in parent Stirfile or
+environment, default commands and flags are used. There is also option to
+compile it with Lua support, not used as default.
+
+The Stirfile of abce is as follows:
+
+<programlisting>
+@toplevel
+@strict
+
+# You can modify these during compilation
+$(CC) ?= @nil
+@if(@type($(CC)) == @type(@nil))
+  $(CC) ``= ["sh", "-c", "echo $CC"]
+  @if($(CC)[] == 0)
+    $(CC) = ["cc"]
+  @endif
+@endif
+$(CFLAGS) ?= @nil
+@if(@type($(CFLAGS)) == @type(@nil))
+  $(CFLAGS) ``= ["sh", "-c", "echo $CFLAGS"]
+  @if($(CFLAGS)[] == 0)
+    $(CFLAGS) = ["-O3", "-Wall", "-g"]
+  @endif
+@endif
+$(FLEX) ?= @nil
+@if(@type($(FLEX)) == @type(@nil))
+  $(FLEX) ``= ["sh", "-c", "echo $FLEX"]
+  @if($(FLEX)[] == 0)
+    $(FLEX) = ["flex"]
+  @endif
+@endif
+$(BYACC) ?= @nil
+@if(@type($(BYACC)) == @type(@nil))
+  $(BYACC) ``= ["sh", "-c", "echo $BYACC"]
+  @if($(BYACC)[] == 0)
+    $(BYACC) = ["byacc"]
+  @endif
+@endif
+$(WITH_LUA) ?= @false
+$(LUAINCS) ?= ["-I/usr/include/luajit-2.1"]
+$(LUALIBS) ?= ["/usr/lib/x86_64-linux-gnu/libluajit-5.1.a"]
+
+# You can modify these during development
+$(SRC_LIB) = ["amyplanyyutils.c", "memblock.c", "abcerbtree.c", \
+              "amyplanlocvarctx.c", "engine.c", "abcestring.c", "abcetrees.c", \
+              "abcescopes.c", "abce.c", "abceapi.c", "safemode.c", \
+              "abcejmalloc.c", "abceprettyftoa.c", "abce_caj_out.c", \
+              "abcestreamingatof.c", "abce_caj.c"]
+$(SRC_PROG) = ["gctest.c", "reftest.c", "ret.c", "breaktest.c", "main.c", \
+               "locvartest.c", "treetest.c", "amyplantest.c", "fiboefftest.c", \
+               "fortest.c", "iftest.c", "dumptest.c", "fibonaccitest.c", \
+               "bttest.c", "shortcut.c", "dictnext.c", "amyplan.c", \
+               "getenvtest.c"]
+$(LEX_LIB) = ["amyplanyy.l"]
+
+# Here starts the portions you probably don't want to modify
+$(YACC_LIB) = @sufsuball($(LEX_LIB), ".l", ".y")
+$(SRC) = [@$(SRC_LIB), @$(SRC_PROG)]
+$(LEXGEN_LIB) = @sufsuball($(LEX_LIB), ".l", ".lex.c")
+$(YACCGEN_LIB) = @sufsuball($(YACC_LIB), ".y", ".tab.c")
+$(GEN_LIB) = [@$(LEXGEN_LIB), @$(YACCGEN_LIB)]
+$(OBJ_LIB) = @sufsuball($(SRC_LIB), ".c", ".o")
+$(OBJ) = @sufsuball($(SRC), ".c", ".o")
+$(OBJGEN_LIB) = @sufsuball($(GEN_LIB), ".c", ".o")
+$(DEP) = @sufsuball($(SRC), ".c", ".d")
+$(DEPGEN_LIB) = @sufsuball($(GEN_LIB), ".c", ".d")
+$(PROG) = @sufsuball($(SRC_PROG), ".c", "")
+
+@if(!$(WITH_LUA))
+  $(LUAINCS) = []
+  $(LUALIBS) = []
+@endif
+@if($(WITH_LUA))
+  $(CFLAGS) = [@$(CFLAGS), @$(LUAINCS), "-DWITH_LUA"]
+@endif
+
+@phonyrule: 'all': $(PROG) 'libabce.a'
+
+@phonyrule: 'wc':
+@	["wc", "-l", @$(LEX_LIB), @$(YACC_LIB), @$(SRC), @@suffilterout(@suffilterout(@glob("*.h"),".lex.h"),".tab.h")]
+
+@patrule @distrule: $(PROG): '%': '%.o' 'libabce.a'
+@	[@$(CC), @$(CFLAGS), "-o", $@, $&lt;, 'libabce.a', @$(LUALIBS), '-lm', '-ldl']
+
+@patrule: $(OBJ): '%.o': '%.c' '%.d'
+@	[@$(CC), @$(CFLAGS), "-c", "-o", $@, $&lt;]
+
+@patrule: $(OBJGEN_LIB): '%.o': '%.c' '%.h' '%.d'
+@	[@$(CC), @$(CFLAGS), "-Wno-sign-compare", "-Wno-missing-prototypes", "-c", "-o", $@, $&lt;]
+
+@patrule: $(DEP): '%.d': '%.c'
+@	[@$(CC), @$(CFLAGS), "-MM", "-o", $@, $&lt;]
+
+@patrule: $(DEPGEN_LIB): '%.d': '%.c' '%.h'
+@	[@$(CC), @$(CFLAGS), "-Wno-sign-compare", "-Wno-missing-prototypes", "-MM", "-o", $@, $&lt;]
+
+'libabce.a': $(OBJ_LIB) $(OBJGEN_LIB)
+@	["rm", "-f", $@]
+@	["ar", "rvs", $@, @@suffilter($^, ".o")]
+
+@function $ADD_LEXX_YACC_DEPS($lex)
+  @locvar $b = @sufsuball($lex, ".l", "")
+  @locvar $i = 0
+  @locvar $c = @nil
+  @for($i = 0, $i &lt; $b[], $i = $i+1)
+    $c = $b[$i]
+    @adddeps([$c.".lex.d", $c.".lex.o", $c.".tab.d", $c.".tab.o"], \
+             [$c.".lex.h", $c.".tab.h"], {})
+  @endfor
+@endfunction
+@call $ADD_LEXX_YACC_DEPS($(LEX_LIB))
+
+@patrule: $(LEXGEN_LIB): '%.lex.c' '%.lex.h': '%.l'
+@	[@$(FLEX), "--outfile=".$@, "--header-file=".@sufsubone($@,".c",".h"), \
+	$&lt;]
+
+@patrule: $(YACCGEN_LIB): '%.tab.c' '%.tab.h': '%.y'
+@	[@$(BYACC), "-d", "-p", @sufsubone($@, ".tab.c", ""), "-b", \
+	@sufsubone($@, ".tab.c", ""), "-o", $@, $&lt;]
+
+@cdepincludes @autophony @autotarget @ignore [@$(DEP), @$(DEPGEN_LIB)]
+</programlisting>
+
+</para>
     </sect1>
   </chapter>
   </part>
