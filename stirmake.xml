@@ -2226,8 +2226,8 @@ $JOINT = '0123456789' . $MID . 'cdef'
 </para><para>
 
 String characters can be accessed (but not modified as strings are immutable)
-by specifying the @ operator and index inside square brackets. Note the
-@ operator is present to specify it's string indexing; without it, the indexing
+by specifying the @ operator and index inside square brackets. Note the
+@ operator is present to specify it's string indexing; without it, the indexing
 would be array indexing. It works as follows:
 
 <programlisting>
@@ -3041,7 +3041,7 @@ via shell:
 @strict
 @phonyrule: 'all': 'hello'
 'hello': 'hello.c'
-	cc -o $@ $&lt;
+	cc -o $@ $&lt;
 </programlisting>
 
 </para><para>
@@ -3055,7 +3055,7 @@ command-line arguments:
 @strict
 @phonyrule: 'all': 'hello'
 'hello': 'hello.c'
-@	["cc", "-o", $@, $&lt;]
+@	["cc", "-o", $@, $&lt;]
 </programlisting>
 
 </para><para>
@@ -3100,7 +3100,7 @@ Of course, with the @-tab syntax it's possible to specify the shell manually:
 @strict
 @phonyrule: 'all': 'hello'
 'hello': 'hello.c'
-@	["sh", "-c", "cc -o " . $@ . " " . $&lt;]
+@	["sh", "-c", "cc -o " . $@ . " " . $&lt;]
 </programlisting>
 
 </para><para>
@@ -3147,7 +3147,7 @@ An example of the database when -E is used:
 
 </para><para>
 
-The @v2@ specifier at beginning tells the version (v1: just commands, v2: also
+The @v2@ specifier at beginning tells the version (v1: just commands, v2: also
 file sizes and timestamps). The first three files are mentioned along with the
 commands that were used to build the files. The first "NI", "E", "NM" are
 command settings (no-ignore / ignore, echo / no-echo, no-make / is-make) and
