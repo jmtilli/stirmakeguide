@@ -4037,15 +4037,230 @@ $(PROG) = @sufsuball($(SRC_PROG), ".c", "")
   </chapter>
   <chapter xml:id="oneprojectatatime">
     <title>Make revolution, one project at a time</title>
-    <!-- Not everyone uses stirmake yet -->
-    <!-- integration to jobserver and make autodetection -->
-    <!-- backtick-equals, backtick-backtick-equals -->
-    <!-- chomp -->
-    <!-- getenv -->
-    <!-- strwordlist -->
-    <!-- recommendation for CC and CFLAGS support, both list of lists -->
-    <!-- integration to subproject cleaning systems with clean hooks -->
-    <!-- recdep and detouchrule/rectgtrule/mayberule -->
+    <sect1>
+      <title>Not everyone uses stirmake yet</title>
+<para>
+
+For build systems, the most important thing to note is that when a new build
+system intended to displace make appears, not everyone uses the new build
+system at the time the new build system appears. Transition is slow, and since
+projects may include subprojects with potentially different build systems, a
+new build system can be successful in displacing make only when it is as
+compatible with make as possible. Importantly, GNU make should be able to
+invoke subprojects that use stirmake, with full jobserver guest, and the
+top-level project built with stirmake should be possible to execute numerous
+GNU make subprojects with full jobserver host.
+
+</para><para>
+
+Stirmake has both jobserver guest and host. When used as host, it actually uses
+a socket pair, not a pipe, but the socket pair has been tested with GNU make
+and found to work. The reason socket pair is superior is that pipes do not
+support the flag MSG_DONTWAIT, but socket pairs do. The pipe cannot be marked
+nonblocking by stirmake, since GNU make expects it to be blocking, but stirmake
+requires nonblocking read. So what stirmake does is that it uses poll() to
+check if there's something to read, and only if there's something to read, it
+tries recv with MSG_DONTWAIT, and if it was found to not be a socket, it arms
+an interval timer to 10 milliseconds, and executes read. The interval timer
+only causes a penalty of 10 milliseconds in case something else stole the
+character from the pipe that was there previously when used with poll().
+
+</para>
+    </sect1>
+    <sect1>
+      <title>Interfacing to command-line tools that specify flags etc</title>
+<para>
+
+Sometimes, there is a configuration utility that tells the arguments that
+should be used for compiling something. An example: python3-config --includes
+and python3-config --libs. These commands give arguments to C compiler (where
+#included files are) and linker (what to link in addition to Python). Stirmake
+supports interfacing to such tools with backtick-equals and
+backtick-backtick-equals operators.
+
+</para><para>
+
+The backtick-backtick-equals operator creates a string list, separated with
+spaces. It is what python3-config --includes and python3-config --libs need to
+use, since they give several arguments in one line. Also, the
+backtick-backtick-equals removes the trailing newline present in just about
+every command you can execute with shell:
+
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+$PYTHON3_INCLUDES ``= ["python3-config", "--includes"]
+$PYTHON3_LIBS ``= ["python3-config", "--libs"]
+@call @dump($PYTHON3_INCLUDES)
+@call @dump($PYTHON3_LIBS)
+</programlisting>
+
+...which prints:
+<programlisting>
+["-I/usr/include/python3.8", "-I/usr/include/python3.8"]
+["-lcrypt", "-lpthread", "-ldl", "-lutil", "-lm", "-lm"]
+</programlisting>
+
+The single backtick variant gives you the raw output of the command:
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+$PYTHON3_RAW_INCLUDES `= ["python3-config", "--includes"]
+$PYTHON3_RAW_INCLUDES_CHOMPED = @chomp($PYTHON3_RAW_INCLUDES)
+@call @dump($PYTHON3_RAW_INCLUDES)
+@call @dump($PYTHON3_RAW_INCLUDES_CHOMPED)
+</programlisting>
+
+...which prints:
+<programlisting>
+"-I/usr/include/python3.8 -I/usr/include/python3.8\n"
+"-I/usr/include/python3.8 -I/usr/include/python3.8"
+</programlisting>
+
+Here the @chomp builtin is necessary, since the raw command output includes a
+trailing newline, which is removed by @chomp if present.
+
+</para>
+    </sect1>
+    <sect1>
+      <title>Interfacing to environment</title>
+<para>
+
+One possible way to interface to environment is to invoke the shell to
+parse environment variables. However, it is a rather heavyweight thing to do
+for a lightweight operation. Still, it works:
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+$CC_RAW `= ["sh", "-c", "echo $CC"]
+$CC_CHOMPED = @chomp($CC_RAW)
+@if($CC_CHOMPED[@] == 0)
+  $CC_CHOMPED = "cc"
+@endif
+@call @dump($CC_CHOMPED)
+</programlisting>
+
+Note that this $CC_CHOMPED can only include the compiler, not any arguments
+to it. If you want to support space-separated arguments in CC, you need to
+use the two backtick variant, and the list length getting is different from
+the string length getting, because string length operator uses @ which list
+length operator does not have:
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+$CC_PLUS_ARGS ``= ["sh", "-c", "echo $CC"]
+@if($CC_PLUS_ARGS[] == 0)
+  $CC_PLUS_ARGS = ["cc"]
+@endif
+@call @dump($CC_PLUS_ARGS)
+</programlisting>
+
+</para><para>
+
+However, a better approach is to use @getenv since it does not need invoking
+the shell:
+
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+$CC = @getenv("CC")
+@if(@type($CC) == @type(@nil) || $CC[@] == 0)
+  $CC = "cc"
+@endif
+@call @dump($CC)
+</programlisting>
+
+Now this works if CC can only contain compiler name. If it needs to support
+containing arguments to compiler too, then @strwordlist is needed, which
+conveniently treats @nil as an empty string:
+
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+$CC = @strwordlist(@getenv("CC"), " \t")
+@if($CC[] == 0)
+  $CC = ["cc"]
+@endif
+@call @dump($CC)
+</programlisting>
+Note how @strwordlist takes the separators, which in this case are space and
+tab. Multiple separators mean different separator characters, not a string
+separator that needs to contain the characters in the given order.
+
+</para>
+    </sect1>
+    <sect1>
+      <title>Why compiler name should be a list with arguments</title>
+<para>
+
+The previous section showed two ways of parsing CC from environment:
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+$CC = @getenv("CC")
+@if(@type($CC) == @type(@nil) || $CC[@] == 0)
+  $CC = "cc"
+@endif
+@call @dump($CC)
+</programlisting>
+...which gets a single string, and:
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+$CC = @strwordlist(@getenv("CC"), " \t")
+@if($CC[] == 0)
+  $CC = ["cc"]
+@endif
+@call @dump($CC)
+</programlisting>
+...which gets a list containing compiler and its arguments.
+
+</para><para>
+
+The question is: which should you use? In most cases, even though CC may often
+contain just one binary name, in some cases there may be environments that
+somewhat incorrectly use arguments too in CC, instead of (or in addition to)
+having the arguments in CFLAGS. In such a case, you need to use the
+@strwordlist variant that splits CC into an executable binary name and
+potential arguments to it. It affects the use, as the first variant without
+support of optional arguments is used as:
+<programlisting>
+$(CCCMD)&lt;&gt; = [$(CC), @$(CFLAGS), "-c", "-o", $@, $&lt;]
+</programlisting>
+...whereas the second variant with support of optional arguments is used as:
+<programlisting>
+$(CCCMD)&lt;&gt; = [@$(CC), @$(CFLAGS), "-c", "-o", $@, $&lt;]
+</programlisting>
+...since in the second case, the entire CC list needs to be embedded in the
+command line.
+
+</para><para>
+
+Why the somewhat incorrect inclusion of arguments to CC is prevalent is that
+make treats everything as a space-separated list. So with make, CC that
+contains spaces means command name and optional arguments to it. For full
+compatibility with make, it is recommended that you follow the same approach
+in stirmake.
+
+</para>
+
+    </sect1>
+    <sect1>
+      <title>Integration to subproject cleaning systems with clean hooks</title>
+      <!-- integration to subproject cleaning systems with clean hooks -->
+    </sect1>
+    <sect1>
+      <title>Recursive directory dependencies</title>
+      <!-- recdep and detouchrule/rectgtrule/mayberule -->
+    </sect1>
     <!-- make in same directory with mayberule -->
   </chapter>
   <chapter xml:id="scopingandsubdirectories">
