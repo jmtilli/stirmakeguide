@@ -4031,9 +4031,15 @@ $(PROG) = @sufsuball($(SRC_PROG), ".c", "")
   <title>Stirmake in large-scale systems</title>
   <chapter xml:id="multiproject">
     <title>Stirmake for entire project structures</title>
-    <!-- including sub-projects -->
-    <!-- invoking stirmake: smka, smkp, smkt -->
-    <!-- controlling what to export with holey scopes -->
+    <sect1>
+      <title>Including sub-projects</title>
+    </sect1>
+    <sect1>
+      <title>Invoking stirmake: smka, smkp, smkt</title>
+    </sect1>
+    <sect1>
+      <title>Controlling what to export with holey scopes</title>
+    </sect1>
   </chapter>
   <chapter xml:id="oneprojectatatime">
     <title>Make revolution, one project at a time</title>
