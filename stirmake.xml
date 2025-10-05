@@ -4906,6 +4906,158 @@ make: Leaving directory '/home/YOURUSERNAME/camftpd/argon2'
     </sect1>
     <sect1>
       <title>fastdiv</title>
+<para>
+
+<link xlink:href="https://github.com/jmtilli/fastdiv">fastdiv</link> is a very
+simple project that demonstrates how "fast division by invariant integers with
+multiplication" algorithm can be implemented in C code. Probably all important
+C compilers today support it for invariant integers, but integers that are
+rarely changing or invariant but not compile-time invariant are use cases where
+fastdiv is needed if the performance of the faster division is useful.
+
+</para><para>
+
+The project is very simple, but the complexity of the Stirfile is in the
+$MODULE(...) function that offers a convenient way of adding all rules in a
+module, with very few lines, eliminating boilerplate code. The $MODULE(...)
+function requires a simple helper $LIST_TO_DICTS_SIMPLE(...).
+
+</para><para>
+
+The top-level Stirfile is:
+<programlisting>
+@toplevel
+@strict
+
+@fileinclude @ignore "opts.smk"
+
+# You can modify these for compilation
+$CC ?= "cc"
+$CFLAGS ?= ["-g", "-O2", "-Wall", "-Wextra", "-Wsign-conversion", "-Wno-missing-field-initializers", "-Wno-unused-parameter", "-Wshadow", "-Wstrict-prototypes", "-Wmissing-prototypes", "-Wpointer-arith", "-Werror", "-std=gnu11", "-fPIC"]
+$LDFLAGS ?= []
+
+# You can modify these during development
+$MODS = ["lib", "examples"]
+
+# You probably don't want to modify anything below this line
+
+@function $LIST_TO_DICTS_SIMPLE($list, $param)
+  @locvar $i=0
+  @locvar $dicts=[]
+  @for($i=0,$i&lt;$list[],$i=$i+1)
+    @append($dicts, {$param: $list[$i]})
+  @endfor
+  @return $dicts
+@endfunction
+
+@function $MODULE($lib, $src_lib, $src_prog, $libs, $unitdeps, $unitcmds)
+  @locvar $src = [@$src_lib, @$src_prog]
+  @locvar $obj_lib = @sufsuball($src_lib, ".c", ".o")
+  @locvar $obj_prog = @sufsuball($src_prog, ".c", ".o")
+  @locvar $obj = @sufsuball($src, ".c", ".o")
+  @locvar $dep = @sufsuball($src, ".c", ".d")
+  @locvar $prog = @sufsuball($src_prog, ".c", "")
+  @locvar $alldeps = [@$prog, $lib]
+  @locvar $i = 0
+  @addrule({"tgts": [{"name": "all"}], "attrs": {"phony": @true}, \
+            "deps": @L$LIST_TO_DICTS_SIMPLE($alldeps, "name")})
+  @addrule({"tgts": [{"name": "unit"}], "attrs": {"phony": @true}, \
+            "deps": @L$LIST_TO_DICTS_SIMPLE($unitdeps, "name"), \
+            "shells": [{"embed": @true, "cmds": $unitcmds}]})
+  @for($i=0,$i&lt;$obj[],$i=$i+1)
+    @addrule({"tgts": [{"name": $obj[$i]}], \
+              "deps": [{"name": $src[$i]}, {"name": $dep[$i]}], \
+              "shells": [{"cmd": [ \
+                          @D$(CC), @@D$(CFLAGS), "-c", "-o", $obj[$i], \
+                          $src[$i]]}]})
+    @addrule({"tgts": [{"name": $dep[$i]}], \
+              "deps": [{"name": $src[$i]}], \
+              "shells": [{"cmd": [ \
+                          @D$(CC), @@D$(CFLAGS), "-M", "-o", $dep[$i], \
+                          $src[$i]]}]})
+  @endfor
+  @for($i=0,$i&lt;$prog[],$i=$i+1)
+    @addrule({"tgts": [{"name": $prog[$i]}], \
+              "deps": [{"name": $obj_prog[$i]}, \
+                       {"name": $lib}, \
+                       @@L$LIST_TO_DICTS_SIMPLE($libs, "name")], \
+              "shells": [{"cmd": [ \
+                          @D$(CC), @@D$(CFLAGS), "-o", $prog[$i], \
+                          $obj_prog[$i], $lib, @$libs, @@D$(LDFLAGS), \
+                          "-lpthread", "-ldl"]}]})
+  @endfor
+  @addrule({"tgts": [{"name": $lib}], \
+            "deps": @L$LIST_TO_DICTS_SIMPLE($obj_lib, "name"), \
+            "shells": [{"embed": @true, "cmds": [ \
+                        ["rm", "-f", $lib], \
+                        ["ar", "rvs", $lib, @$obj_lib]]}]})
+@endfunction
+
+$MODS_ALL = @sufsuball($MODS, "", "/all")
+$MODS_UNIT = @sufsuball($MODS, "", "/unit")
+
+@phonyrule: 'all': $MODS_ALL 'fastdiv'
+
+@phonyrule: 'unit': $MODS_UNIT 'unit_root'
+
+'fastdiv': 'fastdiv.c'
+@	[@D$(CC), @@D$(CFLAGS), "-o", @D$@, @D$&lt; @@D$(LDFLAGS)]
+
+@phonyrule: 'unit_root':
+@	["./fastdiv"]
+
+@dirinclude $MODS
+</programlisting>
+
+...and "lib/Stirfile" is:
+
+<programlisting>
+@subfile
+@strict
+
+# You can modify these
+$SRC_LIB = ["fastdivlib.c"]
+$SRC_PROG = []
+$LIB = "libfastdiv.a"
+$EXTRACFLAGS = []
+$CFLAGS = [@$CFLAGS, @$EXTRACFLAGS]
+$LIBS = []
+$UNITDEPS = []
+$UNITCMDS = []
+
+# You won't want to modify anything below this line
+@call $MODULE($LIB, $SRC_LIB, $SRC_PROG, $LIBS, $UNITDEPS, $UNITCMDS)
+
+@cdepincludes @autophony @autotarget @ignore \
+  @sufsuball([@$SRC_PROG, @$SRC_LIB], ".c", ".d")
+</programlisting>
+
+...and examples/Stirfile is:
+
+<programlisting>
+@subfile
+@strict
+
+# You can modify these
+$SRC_LIB = []
+$SRC_PROG = ["main.c"]
+$LIB = "libexamples.a"
+$EXTRACFLAGS = ["-I../lib"]
+$CFLAGS = [@$CFLAGS, @$EXTRACFLAGS]
+$LIBS = ["../lib/libfastdiv.a"]
+$UNITDEPS = []
+$UNITCMDS = [["./main"]]
+
+# You won't want to modify anything below this line
+@call $MODULE($LIB, $SRC_LIB, $SRC_PROG, $LIBS, $UNITDEPS, $UNITCMDS)
+
+@cdepincludes @autophony @autotarget @ignore \
+  @sufsuball([@$SRC_PROG, @$SRC_LIB], ".c", ".d")
+</programlisting>
+
+Note how the $MODULE function eliminated a lot of boilerplate rules.
+
+</para>
     </sect1>
     <sect1>
       <title>pptk</title>
