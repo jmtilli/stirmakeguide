@@ -4828,6 +4828,86 @@ argument).
   <chapter xml:id="examplelargeprojects">
     <title>Example large or complex projects</title>
     <sect1>
+      <title>camftpd</title>
+<para>
+
+<link xlink:href="https://github.com/jmtilli/camftpd">camftpd</link> is an
+insert-only FTP server supporting only a single directory. It doesn't support
+deleting or getting files, or subdirectories. The project is very small, but
+what makes it somewhat complex is that it interfaces to the GNU make based
+build system of submodule argon2.
+
+</para><para>
+
+Here is the Stirfile of camftpd:
+
+<programlisting>
+@toplevel
+@strict
+
+$CC="cc"
+$CFLAGS=["-Wall", "-O3"]
+$LIBS=['-pthread']
+
+@phonyrule: 'all': 'camftpd' 'camftpdpwenc'
+
+@rectgtrule: 'argon2/libargon2.a': @recdep 'argon2'
+@	["make", "-C", "argon2"]
+
+@cleanhook:
+@	["make", "-C", "argon2", "clean"]
+
+@bothcleanhook:
+@	["make", "-C", "argon2", "clean"]
+
+'camftpd': 'camftpd.o' 'argon2/libargon2.a'
+@	[$CC, @$CFLAGS, "-o", $@, @@suffilter($^, ".o"), @@suffilter($^, ".a"), @$LIBS]
+
+'camftpd.o': 'camftpd.c'
+@	[$CC, @$CFLAGS, "-c", "-o", $@, $&lt;]
+
+'camftpdpwenc': 'camftpdpwenc.o' 'argon2/libargon2.a'
+@	[$CC, @$CFLAGS, "-o", $@, @@suffilter($^, ".o"), @@suffilter($^, ".a"), @$LIBS]
+
+'camftpdpwenc.o': 'camftpdpwenc.c'
+@	[$CC, @$CFLAGS, "-c", "-o", $@, $&lt;]
+</programlisting>
+
+Note the @rectgtrule (an alternative would be @detouchrule) and @recdep. These
+make Stirmake intelligently attempt to determine whether the sub-make needs to
+be invoked at all. If it is invoked where it doesn't need to be invoked, the
+damage is not massive, as the only printed additional lines in this case would
+be:
+
+<programlisting>
+stirmake: Using directory /home/YOURUSERNAME/camftpd
+[., argon2/libargon2.a] make -C argon2
+make: Entering directory '/home/YOURUSERNAME/camftpd/argon2'
+Building with optimizations for native
+make: Nothing to be done for 'all'.
+make: Leaving directory '/home/YOURUSERNAME/camftpd/argon2'
+[., camftpdpwenc] cc -Wall -O3 -o camftpdpwenc camftpdpwenc.o argon2/libargon2.a -pthread
+[., camftpd] cc -Wall -O3 -o camftpd camftpd.o argon2/libargon2.a -pthread
+</programlisting>
+
+In this case, @detouchrule would be somewhat better, as unnecessary invocation
+would print only:
+<programlisting>
+stirmake: Using directory /home/YOURUSERNAME/camftpd
+[., argon2/libargon2.a] make -C argon2
+make: Entering directory '/home/YOURUSERNAME/camftpd/argon2'
+Building with optimizations for native
+make: Nothing to be done for 'all'.
+make: Leaving directory '/home/YOURUSERNAME/camftpd/argon2'
+</programlisting>
+...without rebuild of camftpd and camftpdpwenc.
+
+</para>
+    </sect1>
+    <sect1>
+      <title>fastdiv</title>
+    </sect1>
+    <sect1>
       <title>pptk</title>
     </sect1>
     <sect1>
@@ -4847,12 +4927,6 @@ argument).
     </sect1>
     <sect1>
       <title>caj</title>
-    </sect1>
-    <sect1>
-      <title>camftpd</title>
-    </sect1>
-    <sect1>
-      <title>fastdiv</title>
     </sect1>
   </chapter>
   </part>
