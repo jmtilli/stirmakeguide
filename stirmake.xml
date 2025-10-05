@@ -3664,7 +3664,10 @@ as follows:
 @fileinclude @ignore "opts.smk"
 
 $CC ?= "cc"
-$CFLAGS ?= ["-g", "-O2", "-Wall", "-Wextra", "-Wsign-conversion", "-Wno-missing-field-initializers", "-Wno-unused-parameter", "-Wshadow", "-Wstrict-prototypes", "-Wmissing-prototypes", "-Wpointer-arith", "-Werror", "-std=gnu11", "-fPIC"]
+$CFLAGS ?= ["-g", "-O2", "-Wall", "-Wextra", "-Wsign-conversion", \
+ "-Wno-missing-field-initializers", "-Wno-unused-parameter", "-Wshadow", \
+ "-Wstrict-prototypes", "-Wmissing-prototypes", "-Wpointer-arith", "-Werror", \
+ "-std=gnu11", "-fPIC"]
 
 $(SRC_LIB) = ["streamingatof.c"]
 $(SRC_PROG) = ["test.c"]
