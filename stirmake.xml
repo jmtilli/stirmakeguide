@@ -6491,6 +6491,7 @@ interpreter.
     <title>Advanced tricks</title>
     <!-- pattern rules, TODO perhaps earlier? -->
     <!-- scopes stored in variables -->
+    <!-- function data types, builtin wrappers -->
     <!-- deponly for additional dependencies -->
     <!-- @order and @wait -->
     <!-- dynamically adding rules -->
