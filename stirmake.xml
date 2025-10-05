@@ -5088,7 +5088,10 @@ top-level Stirfile:
 # You can modify these for compilation
 $WITH_WERROR ?= @false
 $CC ?= "cc"
-$CFLAGS ?= ["-g", "-O2", "-Wall", "-Wextra", "-Wsign-conversion", "-Wno-missing-field-initializers", "-Wno-unused-parameter", "-Wshadow", "-Wstrict-prototypes", "-Wmissing-prototypes", "-Wpointer-arith", "-std=gnu11", "-fPIC"]
+$CFLAGS ?= ["-g", "-O2", "-Wall", "-Wextra", "-Wsign-conversion", \
+ "-Wno-missing-field-initializers", "-Wno-unused-parameter", "-Wshadow", \
+ "-Wstrict-prototypes", "-Wmissing-prototypes", "-Wpointer-arith", \
+ "-std=gnu11", "-fPIC"]
 $WITH_NETMAP ?= @false
 $NETMAP_INCDIR ?= ""
 $WITH_ODP ?= @false
@@ -5097,7 +5100,8 @@ $WITH_DPDK ?= @false
 $WITH_LUA ?= @false
 $DPDK_INCDIR ?= ""
 $DPDK_LIBDIR ?= ""
-$LIBS_ODPDEP ?= ["/usr/lib/x86_64-linux-gnu/libssl.a", "/usr/lib/x86_64-linux-gnu/libcrypto.a"]
+$LIBS_ODPDEP ?= ["/usr/lib/x86_64-linux-gnu/libssl.a", \
+ "/usr/lib/x86_64-linux-gnu/libcrypto.a"]
 $LDFLAGS ?= []
 
 @if($WITH_WERROR)
