@@ -5109,7 +5109,11 @@ $LDFLAGS ?= []
 @endif
 
 # You can modify these during development
-$MODS = ["tcpreass", "dynarr", "misc", "hashlist", "hashtable", "rbtree", "avltree", "timerrb", "timeravl", "linkedlist", "timerlinkheap", "timerskiplist", "timerwheel", "log", "iphdr", "ipfrag", "packet", "arp", "ports", "queue", "alloc", "random", "databuf", "tuntap", "portlist", "netmap", "iphash", "mypcap", "ldp", "libpptk"]
+$MODS = ["tcpreass", "dynarr", "misc", "hashlist", "hashtable", "rbtree", \
+ "avltree", "timerrb", "timeravl", "linkedlist", "timerlinkheap", \
+ "timerskiplist", "timerwheel", "log", "iphdr", "ipfrag", "packet", "arp", \
+ "ports", "queue", "alloc", "random", "databuf", "tuntap", "portlist", \
+ "netmap", "iphash", "mypcap", "ldp", "libpptk"]
 
 # You probably don't want to modify anything below this line
 
