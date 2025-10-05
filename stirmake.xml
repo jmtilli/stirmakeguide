@@ -5194,6 +5194,186 @@ rules.
     </sect1>
     <sect1>
       <title>nmsynproxy</title>
+<para>
+
+<link xlink:href="https://github.com/Aalto5G/nmsynproxy">nmsynproxy</link> is a
+layer 2 TCP SYN proxy implemented using netmap (or DPDK or Linux raw sockets,
+alternatively). It is built on top of the functionality <link
+xlink:href="https://github.com/Aalto5G/pptk">pptk</link> offers.
+
+</para><para>
+
+The top-level Stirfile contains:
+<programlisting>
+@toplevel
+@strict
+
+@fileinclude @ignore "opts.smk"
+
+# You can modify these for compilation
+$WITH_WERROR ?= @false
+$CC ?= "cc"
+$CFLAGS ?= ["-g", "-O2", "-Wall", "-Wextra", "-Wsign-conversion", "-Wno-missing-field-initializers", "-Wno-unused-parameter", "-Wshadow", "-Wstrict-prototypes", "-Wmissing-prototypes", "-Wpointer-arith", "-std=gnu11", "-fPIC"]
+$WITH_NETMAP ?= @false
+$NETMAP_INCDIR ?= ""
+$WITH_ODP ?= @false
+$ODP_DIR ?= "/usr/local"
+$WITH_DPDK ?= @false
+$WITH_LUA ?= @false
+$DPDK_INCDIR ?= ""
+$DPDK_LIBDIR ?= ""
+$LIBS_ODPDEP ?= ["/usr/lib/x86_64-linux-gnu/libssl.a", "/usr/lib/x86_64-linux-gnu/libcrypto.a"]
+$LDFLAGS ?= []
+
+@if($WITH_WERROR)
+  $CFLAGS = [@$CFLAGS, "-Werror"]
+@endif
+
+# You can modify these during development
+$MODS = ["sackhash", "synproxy", "threetuple"]
+
+# You probably don't want to modify anything below this line
+
+@function $LIST_TO_DICTS_SIMPLE($list, $param)
+  @locvar $i=0
+  @locvar $dicts=[]
+  @for($i=0,$i&lt;$list[],$i=$i+1)
+    @append($dicts, {$param: $list[$i]})
+  @endfor
+  @return $dicts
+@endfunction
+
+@function $MODULE($lib, $src_lib, $src_prog, $libs, $unitdeps, $unitcmds)
+  @locvar $src = [@$src_lib, @$src_prog]
+  @locvar $obj_lib = @sufsuball($src_lib, ".c", ".o")
+  @locvar $obj_prog = @sufsuball($src_prog, ".c", ".o")
+  @locvar $obj = @sufsuball($src, ".c", ".o")
+  @locvar $dep = @sufsuball($src, ".c", ".d")
+  @locvar $prog = @sufsuball($src_prog, ".c", "")
+  @locvar $alldeps = [@$prog, $lib]
+  @locvar $i = 0
+  @addrule({"tgts": [{"name": "all"}], "attrs": {"phony": @true}, \
+            "deps": @L$LIST_TO_DICTS_SIMPLE($alldeps, "name")})
+  @addrule({"tgts": [{"name": "unit"}], "attrs": {"phony": @true}, \
+            "deps": @L$LIST_TO_DICTS_SIMPLE($unitdeps, "name"), \
+            "shells": [{"embed": @true, "cmds": $unitcmds}]})
+  @for($i=0,$i&lt;$obj[],$i=$i+1)
+    @addrule({"tgts": [{"name": $obj[$i]}], \
+              "deps": [{"name": $src[$i]}, {"name": $dep[$i]}], \
+              "shells": [{"cmd": [ \
+                          @D$(CC), @@D$(CFLAGS), "-c", "-o", $obj[$i], \
+                          $src[$i]]}]})
+    @addrule({"tgts": [{"name": $dep[$i]}], \
+              "deps": [{"name": $src[$i]}], \
+              "shells": [{"cmd": [ \
+                          @D$(CC), @@D$(CFLAGS), "-M", "-o", $dep[$i], \
+                          $src[$i]]}]})
+  @endfor
+  @for($i=0,$i&lt;$prog[],$i=$i+1)
+    @addrule({"tgts": [{"name": $prog[$i]}], \
+              "deps": [{"name": $obj_prog[$i]}, \
+                       {"name": $lib}, \
+                       @@L$LIST_TO_DICTS_SIMPLE($libs, "name")], \
+              "shells": [{"cmd": [ \
+                          @D$(CC), @@D$(CFLAGS), "-o", $prog[$i], \
+                          $obj_prog[$i], $lib, @$libs, @@D$(LDFLAGS), \
+                          "-lpthread", "-ldl"]}]})
+  @endfor
+  @addrule({"tgts": [{"name": $lib}], \
+            "deps": @L$LIST_TO_DICTS_SIMPLE($obj_lib, "name"), \
+            "shells": [{"embed": @true, "cmds": [ \
+                        ["rm", "-f", $lib], \
+                        ["ar", "rvs", $lib, @$obj_lib]]}]})
+@endfunction
+
+$MODS_ALL = @sufsuball($MODS, "", "/all")
+$MODS_UNIT = @sufsuball($MODS, "", "/unit")
+
+@phonyrule: 'all': $MODS_ALL 'pptk/all'
+
+@phonyrule: 'unit': $MODS_UNIT 'pptk/unit'
+
+@beginholeyscope
+  $CC = @LP$CC
+  $CFLAGS = @LP$CFLAGS
+  $WITH_NETMAP = @LP$WITH_NETMAP
+  $NETMAP_INCDIR = @LP$NETMAP_INCDIR
+  $WITH_ODP = @LP$WITH_ODP
+  $ODP_DIR = @LP$ODP_DIR
+  $WITH_DPDK = @LP$WITH_DPDK
+  $WITH_LUA = @LP$WITH_LUA
+  $DPDK_INCDIR = @LP$DPDK_INCDIR
+  $DPDK_LIBDIR = @LP$DPDK_LIBDIR
+  $LIBS_ODPDEP = @LP$LIBS_ODPDEP
+  $LDFLAGS = @LP$LDFLAGS
+  $WITH_WERROR = @LP$WITH_WERROR
+  @projdirinclude "pptk"
+@endscope
+
+@dirinclude $MODS
+</programlisting>
+
+...and as an example, one sub-Stirfile synproxy/Stirfile contains:
+
+<programlisting>
+@subfile
+@strict
+
+# You can modify these
+$LEX_LIB = ["conf.l"]
+$SRC_LIB = ["synproxy.c", "yyutils.c", "secret.c", "ctrl.c", \
+            @@sufsuball($LEX_LIB, ".l", ".lex.c"), \
+            @@sufsuball($LEX_LIB, ".l", ".tab.c")]
+$SRC_PROG_NM = ["nmsynproxy.c", "netmapsend.c", \
+                "tcpsendrecv.c", "tcpsendrecv1.c"]
+$SRC_PROG_ODP = ["odpsynproxy.c"]
+$SRC_PROG = ["workeronlyperf.c", "secrettest.c", "conftest.c", \
+             "pcapngworkeronly.c", "unittest.c", "sizeof.c", "ctrlperf.c", \
+             "ldpsynproxy.c", "ldpsend.c"]
+@if($WITH_NETMAP)
+  $SRC_PROG = [@$SRC_PROG, @$SRC_PROG_NM]
+@endif
+@if($WITH_ODP)
+  $SRC_PROG = [@$SRC_PROG, @$SRC_PROG_ODP]
+@endif
+$LIB = "libsynproxy.a"
+# FIXME way to specify LDFLAGS
+# FIXME way to specify different CFLAGS for generated files
+$CFLAGS += ["-I../pptk/packet", "-I../pptk/linkedlist", "-I../pptk/iphdr", \
+            "-I../pptk/misc", "-I../pptk/log", "-I../pptk/hashtable", \
+            "-I../pptk/hashlist", "-I../pptk/ports", "-I../pptk/alloc", \
+            "-I../pptk/timerlinkheap", "-I../pptk/mypcap", \
+            "-I../pptk/dynarr", "-I../pptk/iphash", "-I../sackhash", \
+            "-I../threetuple", "-I../pptk/databuf", "-I../pptk/netmap", \
+            "-I../pptk/ldp", "-I../pptk/rbtree", \
+            "-Wno-sign-compare", "-Wno-missing-prototypes", \
+            "-Wno-sign-conversion", "-L../pptk/libpptk"]
+$LIBS = ["../sackhash/libsackhash.a", "../threetuple/libthreetuple.a", \
+         "../pptk/libpptk/libpptk.a"]
+$UNITDEPS = ["workeronlyperf", "secrettest", "unittest"]
+$UNITCMDS = [["./workeronlyperf"], ["./secrettest"], ["./unittest"]]
+
+# You won't want to modify anything below this line
+@call $MODULE($LIB, $SRC_LIB, $SRC_PROG, $LIBS, $UNITDEPS, $UNITCMDS)
+
+'conf.lex.c' 'conf.lex.h': 'conf.l'
+@	["flex", "--outfile=conf.lex.c", '--header-file=conf.lex.h', $&lt;]
+
+'conf.tab.c' 'conf.tab.h': 'conf.y'
+@	["bison", "--output=conf.tab.c", '--defines=conf.tab.h', $&lt;]
+
+@deponly: 'conf.lex.d' 'conf.lex.o' 'conf.tab.d' 'conf.tab.o': \
+          'conf.tab.h' 'conf.lex.h'
+
+@cdepincludes @autophony @autotarget @ignore \
+  @sufsuball([@$SRC_PROG, @$SRC_LIB], ".c", ".d")
+</programlisting>
+
+Note how a lot of boilerplate code was eliminated, while at the same time new
+rules using commands not supported by $MODULE(..) function can be used. Note
+also conditional compilation with @if($WITH_ODP) and @if($WITH_NETMAP).
+
+</para>
     </sect1>
     <sect1>
       <title>ldpairwall</title>
