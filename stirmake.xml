@@ -4033,9 +4033,79 @@ $(PROG) = @sufsuball($(SRC_PROG), ".c", "")
     <title>Stirmake for entire project structures</title>
     <sect1>
       <title>Including sub-projects</title>
+<para>
+
+Previously, @dirinclude to include subdirectories was demonstrated. This is
+intended for cases where the included subdirectory belongs to the same project,
+i.e. same git repository. The included sub-Stirfile must have @subfile in
+the first line.
+
+</para><para>
+
+However, git submodules are projects that can be built separately or as part
+of the parent module. Because they can be built separately, they cannot have
+@subfile in the first line; rather, they must have @toplevel. Including a
+@toplevel Stirfile with @dirinclude does not work. In this case, the project
+would be included with @projdirinclude:
+
+<programlisting>
+@toplevel
+@strict
+
+@phonyrule: 'all': 'subproj/all'
+
+@projdirinclude 'subproj'
+</programlisting>
+
+The subproj Stirfile would then start with @toplevel too.
+
+</para>
     </sect1>
     <sect1>
       <title>Invoking stirmake: smka, smkp, smkt</title>
+<para>
+
+Stirmake can be invoked using three commands: smka (equal to stirmake -a), smkp
+(equal to stirmake -p), and smkt (equal to stirmake -t). The last characters
+mean "all", "(this) project", "this directory".
+
+</para><para>
+
+Let us suppose that you have a parent project named "parent", with
+sub-directory "parent/subdir", and a sub-project "parent/subdir/subproj", and a
+sub-directory "parent/subdir/subproj/subdir2". If you are currently in the
+directory "parent/subdir/subproj/subdir2", then you may invoke stirmake in
+the following ways:
+
+<itemizedlist mark="bullet">
+<listitem><para>smkt ../all</para></listitem>
+<listitem><para>smkp all</para></listitem>
+<listitem><para>smka subdir/subproj/all</para></listitem>
+</itemizedlist>
+
+All of them refer to the target all in the Stirfile "subdir/subproj/Stirfile".
+If smkt, smkp or smka are executed without arguments in the same directory
+"parent/subdir/subproj/subdir2", "smkt" would execute the first target of
+parent/subdir/subproj/subdir2/Stirfile", "smkp" would execute the first target
+of parent/subdir/subproj/Stirfile", and "smka" would execute the first target
+of the top-level parent/Stirfile. Usually the first target is named "all" by
+convention, and the rule is a phony rule, but this is not certain in all cases.
+
+</para><para>
+
+Note how Stirmake is superior to make in this aspect. You may execute "smka" in
+any subdirectory and it will build everything in the whole project structure.
+With inclusive make, this is not possible, and "make" must be executed in the
+top-level directory that contains a Makefile and not in a subdirectory that
+contains module.mk. Note also that with recursive "make", if you execute "make"
+in a subdirectory, it does not build its dependencies, and if the dependencies
+are alreayd built and the build of the subdirectory succeeds, you still can't
+be certain that the interface wasn't changed in a manner that would cause build
+of some other subdirectory (and thus a top-level build of everything) to fail.
+Stirmake is similar to git: you can execute "git status" or any other git
+command in any subdirectory, and it will work.
+
+</para>
     </sect1>
     <sect1>
       <title>Controlling what to export with holey scopes</title>
