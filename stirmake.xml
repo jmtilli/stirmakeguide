@@ -5065,6 +5065,132 @@ Note how the $MODULE function eliminated a lot of boilerplate rules.
     </sect1>
     <sect1>
       <title>pptk</title>
+<para>
+
+<link xlink:href="https://github.com/Aalto5G/pptk">pptk</link> is a
+comprehensive toolkit containing TCP/IP packet processing tools written in C
+language. There are so many subdirectories that containing all of them
+here as examples would be counterproductive. Instead, I mention only the
+top-level directory and as an example, one subdirectory. Here is the
+top-level Stirfile:
+<programlisting>
+@toplevel
+@strict
+
+@fileinclude @ignore "opts.smk"
+
+# You can modify these for compilation
+$WITH_WERROR ?= @false
+$CC ?= "cc"
+$CFLAGS ?= ["-g", "-O2", "-Wall", "-Wextra", "-Wsign-conversion", "-Wno-missing-field-initializers", "-Wno-unused-parameter", "-Wshadow", "-Wstrict-prototypes", "-Wmissing-prototypes", "-Wpointer-arith", "-std=gnu11", "-fPIC"]
+$WITH_NETMAP ?= @false
+$NETMAP_INCDIR ?= ""
+$WITH_ODP ?= @false
+$ODP_DIR ?= "/usr/local"
+$WITH_DPDK ?= @false
+$WITH_LUA ?= @false
+$DPDK_INCDIR ?= ""
+$DPDK_LIBDIR ?= ""
+$LIBS_ODPDEP ?= ["/usr/lib/x86_64-linux-gnu/libssl.a", "/usr/lib/x86_64-linux-gnu/libcrypto.a"]
+$LDFLAGS ?= []
+
+@if($WITH_WERROR)
+  $CFLAGS = [@$CFLAGS, "-Werror"]
+@endif
+
+# You can modify these during development
+$MODS = ["tcpreass", "dynarr", "misc", "hashlist", "hashtable", "rbtree", "avltree", "timerrb", "timeravl", "linkedlist", "timerlinkheap", "timerskiplist", "timerwheel", "log", "iphdr", "ipfrag", "packet", "arp", "ports", "queue", "alloc", "random", "databuf", "tuntap", "portlist", "netmap", "iphash", "mypcap", "ldp", "libpptk"]
+
+# You probably don't want to modify anything below this line
+
+@function $LIST_TO_DICTS_SIMPLE($list, $param)
+  @locvar $i=0
+  @locvar $dicts=[]
+  @for($i=0,$i&lt;$list[],$i=$i+1)
+    @append($dicts, {$param: $list[$i]})
+  @endfor
+  @return $dicts
+@endfunction
+
+@function $MODULE($lib, $src_lib, $src_prog, $libs, $unitdeps, $unitcmds)
+  @locvar $src = [@$src_lib, @$src_prog]
+  @locvar $obj_lib = @sufsuball($src_lib, ".c", ".o")
+  @locvar $obj_prog = @sufsuball($src_prog, ".c", ".o")
+  @locvar $obj = @sufsuball($src, ".c", ".o")
+  @locvar $dep = @sufsuball($src, ".c", ".d")
+  @locvar $prog = @sufsuball($src_prog, ".c", "")
+  @locvar $alldeps = [@$prog, $lib]
+  @locvar $i = 0
+  @addrule({"tgts": [{"name": "all"}], "attrs": {"phony": @true}, \
+            "deps": @L$LIST_TO_DICTS_SIMPLE($alldeps, "name")})
+  @addrule({"tgts": [{"name": "unit"}], "attrs": {"phony": @true}, \
+            "deps": @L$LIST_TO_DICTS_SIMPLE($unitdeps, "name"), \
+            "shells": [{"embed": @true, "cmds": $unitcmds}]})
+  @for($i=0,$i&lt;$obj[],$i=$i+1)
+    @addrule({"tgts": [{"name": $obj[$i]}], \
+              "deps": [{"name": $src[$i]}, {"name": $dep[$i]}], \
+              "shells": [{"cmd": [ \
+                          @D$(CC), @@D$(CFLAGS), "-c", "-o", $obj[$i], \
+                          $src[$i]]}]})
+    @addrule({"tgts": [{"name": $dep[$i]}], \
+              "deps": [{"name": $src[$i]}], \
+              "shells": [{"cmd": [ \
+                          @D$(CC), @@D$(CFLAGS), "-M", "-o", $dep[$i], \
+                          $src[$i]]}]})
+  @endfor
+  @for($i=0,$i&lt;$prog[],$i=$i+1)
+    @addrule({"tgts": [{"name": $prog[$i]}], \
+              "deps": [{"name": $obj_prog[$i]}, \
+                       {"name": $lib}, \
+                       @@L$LIST_TO_DICTS_SIMPLE($libs, "name")], \
+              "shells": [{"cmd": [ \
+                          @D$(CC), @@D$(CFLAGS), "-o", $prog[$i], \
+                          $obj_prog[$i], $lib, @$libs, @@D$(LDFLAGS), \
+                          "-lpthread", "-ldl"]}]})
+  @endfor
+  @addrule({"tgts": [{"name": $lib}], \
+            "deps": @L$LIST_TO_DICTS_SIMPLE($obj_lib, "name"), \
+            "shells": [{"embed": @true, "cmds": [ \
+                        ["rm", "-f", $lib], \
+                        ["ar", "rvs", $lib, @$obj_lib]]}]})
+@endfunction
+
+$MODS_ALL = @sufsuball($MODS, "", "/all")
+$MODS_UNIT = @sufsuball($MODS, "", "/unit")
+
+@phonyrule: 'all': $MODS_ALL
+
+@phonyrule: 'unit': $MODS_UNIT
+
+@dirinclude $MODS
+</programlisting>
+
+...and as an example, alloc/Stirfile sub-Stirfile:
+
+<programlisting>
+@subfile
+@strict
+
+# You can modify these
+$SRC_LIB = ["asalloc.c", "rballoc.c", "llalloc.c", "directalloc.c"]
+$SRC_PROG = ["asperfmt.c", "asperfst.c", "mallocperfmt.c", "rbperfmt.c", "rbperfst.c", "directallocperfmt.c", "llperfmt.c", "llperfst.c", "allociftest.c"]
+$LIB = "liballoc.a"
+$CFLAGS += ["-I../queue", "-I../hashlist", "-I../misc", "-I../linkedlist"]
+$LIBS = ["../queue/libqueue.a"]
+$UNITDEPS = ["asperfmt", "asperfst", "mallocperfmt", "rbperfmt", "rbperfst", "directallocperfmt", "llperfmt", "llperfst", "allociftest"]
+$UNITCMDS = [["./asperfmt"], ["./asperfst"], ["./mallocperfmt"], ["./rbperfmt"], ["./rbperfst"], ["./directallocperfmt"], ["./llperfmt"], ["./llperfst"], ["./allociftest"]]
+
+# You won't want to modify anything below this line
+@call $MODULE($LIB, $SRC_LIB, $SRC_PROG, $LIBS, $UNITDEPS, $UNITCMDS)
+
+@cdepincludes @autophony @autotarget @ignore \
+  @sufsuball([@$SRC_PROG, @$SRC_LIB], ".c", ".d")
+</programlisting>
+
+You can observe that the $MODULE function eliminates a lot of boilerplate
+rules.
+
+</para>
     </sect1>
     <sect1>
       <title>nmsynproxy</title>
