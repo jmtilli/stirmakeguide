@@ -14,8 +14,12 @@
       </personname>
     </author>
     <copyright>
-      <year>2023-2025</year>
+      <year>2018-2025</year>
       <holder>Juha-Matti Tilli</holder>
+    </copyright>
+    <copyright>
+      <year>2017-2019</year>
+      <holder>Aalto University</holder>
     </copyright>
   </info>
   <part xml:id="part_make">
