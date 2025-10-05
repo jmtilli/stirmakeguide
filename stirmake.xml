@@ -5814,8 +5814,17 @@ As an example, here is the Stirfile of the test subdirectory:
 
 # You can modify these
 
-$SRC_LIB = ["lenprefixcparser.c", "reprefixcparser.c", "httpcparser.c", "httppycparser.c", "httprespcparser.c", "condparsercparser.c", "recursivecbcparser.c", "backtracktestcparser.c", "backtracktestcbcparser.c", "tokentheft1cparser.c", "smtpclientcparser.c", "tokentheft1scparser.c", "ssl1cparser.c", "ssl2cparser.c", "ssl3cparser.c", "ssl4cparser.c", "ssl5cparser.c", "ssl6cparser.c", "fooparsercparser.c"]
-$SRC_PROG = ["parserunit.c", "condtest.c", "httpcmain.c", "httpcmainprint.c", "httpcpytest.c", "httppyperf.c", "lenprefixcmain.c", "reprefixcmain.c", "httprespcmain.c", "recursivecbmain.c", "backtracktestmain.c", "backtracktestcbmain.c", "tokentheft1main.c", "tokentheft1smain.c", "smtpclientmain.c", "sslcmain.c", "sslcmainprint.c", "footest.c"]
+$SRC_LIB = ["lenprefixcparser.c", "reprefixcparser.c", "httpcparser.c", \
+ "httppycparser.c", "httprespcparser.c", "condparsercparser.c", \
+ "recursivecbcparser.c", "backtracktestcparser.c", "backtracktestcbcparser.c", \
+ "tokentheft1cparser.c", "smtpclientcparser.c", "tokentheft1scparser.c", \
+ "ssl1cparser.c", "ssl2cparser.c", "ssl3cparser.c", "ssl4cparser.c", \
+ "ssl5cparser.c", "ssl6cparser.c", "fooparsercparser.c"]
+$SRC_PROG = ["parserunit.c", "condtest.c", "httpcmain.c", "httpcmainprint.c", \
+ "httpcpytest.c", "httppyperf.c", "lenprefixcmain.c", "reprefixcmain.c", \
+ "httprespcmain.c", "recursivecbmain.c", "backtracktestmain.c", \
+ "backtracktestcbmain.c", "tokentheft1main.c", "tokentheft1smain.c", \
+ "smtpclientmain.c", "sslcmain.c", "sslcmainprint.c", "footest.c"]
 $LIB = "libtest.a"
 $CFLAGS += ["-I../runtime", "-I../core"]
 $LIBS = ["../core/libcore.a"]
