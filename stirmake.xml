@@ -6307,15 +6307,167 @@ examples previously.
     <title>Programming Stirmake with Amyplan</title>
     <sect1>
       <title>abce and Amyplan</title>
+<para>
+
+Amyplan is the embedded programming language available in stirmake. On the
+other hand, abce is the bytecode engine that contains the reference
+implementation of Amyplan. abce is linked into stirmake during build.
+
+</para><para>
+
+The specialty of Amyplan is that it is offered as an embeddable Yacc grammar,
+easy to include in the larger Yacc grammar of stirmake. The only tokens Amyplan
+requires are some standard operators that are very similar to what C and many
+other languages have, and all variables start with sigil $ and all builtins
+start with sigil @. So the requirements that Amyplan places on the lexer are
+not big.
+
+</para><para>
+
+Amyplan contains both reference counting and garbage collection. Usually, it
+relies on reference counting but if circular data structures are created,
+sometimes it may do a garbage collection run. The garbage collector is mark and
+sweep. Amyplan does not have any special multithreading support, as it is
+expected that it runs in a single thread and the caller may or may not use
+multithreading to call abce functions.
+
+</para><para>
+
+One specialty of Amyplan is support for recursive nested scoping in the main
+implementation abce. Amyplan supports also both lexical and dynamic scoping.
+This is the specialty that is crucial to stirmake, and that is not supported
+for example by Lua.
+
+</para><para>
+
+abce has a stable bytecode format, so Amyplan programs compiled to bytecode
+can be guaranteed to work in the future as well. However, in most use cases,
+bytecode is not stored to disk, but rather Amyplan files are compiled to
+bytecode prior to execution. The bytecode interpreter is a pure interpreter
+and has no support for JIT compilation.
+
+</para><para>
+
+Unlike Lua which has a single table data type that is used to support both
+normal arrays and associative arrays, abce has separate data types for normal
+and associative arrays. The important feature here is that Lua due to the same
+data type cannot distinguish between empty array and and empty associative
+array and thus is incapable of representing JSON, but Amyplan can and has
+native JSON support as a benefit.
+
+</para><para>
+
+Amyplan contains the following data types:
+<itemizedlist mark="bullet">
+<listitem><para>@nil</para></listitem>
+<listitem><para>For internal use only: instruction pointer register value</para></listitem>
+<listitem><para>For internal use only: base pointer register value</para></listitem>
+<listitem><para>Function address</para></listitem>
+<listitem><para>Boolean</para></listitem>
+<listitem><para>Double-precision IEEE 754 floating point number (used for integers too)</para></listitem>
+<listitem><para>Red-back tree from strings to arbitrary objects</para></listitem>
+<listitem><para>Scope</para></listitem>
+<listitem><para>Array</para></listitem>
+<listitem><para>String (immutable)</para></listitem>
+<listitem><para>Packet buffer (mutable)</para></listitem>
+<listitem><para>I/O stream</para></listitem>
+</itemizedlist>
+
+</para><para>
+
+The typing in abce and Amyplan is strong and dynamic. Many operations support
+only a single data type: for example, accessing elements in arrays, trees,
+strings and packet buffers all use a different syntax.
+
+</para><para>
+
+abce bytecode is always used with compatible object cache. A bytecode can only
+be executed along with its object cache. Object cache can e.g. contain string
+constants or any other objects, indexed by an integer offset.
+
+</para><para>
+
+The Amyplan compiler simply emits abce bytecode for the construct it sees. It
+has no optimization passes: it is a single pass compiler which emits bytecode
+as it sees tokens.
+
+</para>
     </sect1>
     <sect1>
       <title>Installing Amyplan in abce</title>
+<para>
+
+Although stirmake contains Amyplan with it, if you install stirmake, the
+amyplan interpreter is not installed. To install the Amyplan interpreter,
+you must separately clone abce and install it:
+
+<programlisting>
+git clone https://github.com/Aalto5G/abce
+cd abce
+smka
+./install.sh
+</programlisting>
+
+...and optionally, if the installation is to /usr/local:
+<programlisting>
+sudo ./install.sh /usr/local
+</programlisting>
+
+Now amyplan can be executed with the command amyplan file.amy.
+
+</para>
     </sect1>
     <sect1>
       <title>Creating Amyplan scripts</title>
+<para>
+
+Amyplan code outside of functions is not executed. The way Amyplan code is
+executed is that there needs to be a function named $main, with $argv and $env
+as argument giving the command-line arguments and environment variables:
+
+<programlisting>
+#!/usr/bin/env amyplan
+
+@function $main($argv,$env)
+  @locvar $i = @nil
+  @locvar $key = @nil
+  @locvar $val = @nil
+  @for($i = 0, $i &lt; $argv[], $i = $i + 1)
+    @dump($argv[$i])
+  @endfor
+  @fordict $key, $val ($env)
+    @dump($key . "=" . $val)
+  @endfor
+  @exit(5)
+  @return 0
+@endfunction
+</programlisting>
+
+This example code prints arguments and environment, and exits with the status 5
+in the middle of the $main function.
+
+</para>
     </sect1>
     <sect1>
       <title>No read/eval/print loop (REPL)</title>
+<para>
+
+One thing that Amyplan does not have but other scripting languages like Python
+and Lua have, is read/eval/print loop (REPL). The reason it's missing from
+Amyplan is that Amyplan parser is written in Yacc, and support of
+read/eval/print loop due to this architectural choice is difficult. For
+example, if someone writes @while($x) into a single command line in REPL,
+Amyplan would need to know how many lines to read until the entire @while loop
+is terminated with @endwhile. This would be maybe possible but difficult
+architecturally.
+
+</para><para>
+
+So Amyplan is somewhat similar to Perl: there is no pretty repl utility, and
+the usual way it is run is to create scripts and execute them with the
+interpreter.
+
+</para>
     </sect1>
     <sect1>
       <title>Immutable strings and mutable packet buffers</title>
