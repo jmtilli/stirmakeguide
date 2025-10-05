@@ -5371,7 +5371,9 @@ $UNITCMDS = [["./workeronlyperf"], ["./secrettest"], ["./unittest"]]
 
 Note how a lot of boilerplate code was eliminated, while at the same time new
 rules using commands not supported by $MODULE(..) function can be used. Note
-also conditional compilation with @if($WITH_ODP) and @if($WITH_NETMAP).
+also conditional compilation with @if($WITH_ODP) and @if($WITH_NETMAP). There is also
+sub-project pptk included with @projdirinclude, and @beginholeyscope controls what
+variables are visible to the sub-project.
 
 </para>
     </sect1>
