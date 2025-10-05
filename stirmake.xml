@@ -5704,6 +5704,264 @@ function does not natively support.
     </sect1>
     <sect1>
       <title>yale</title>
+<para>
+
+<link xlink:href="https://github.com/Aalto5G/yale">yale</link> is a parser
+generator for network protocols. It is too built using stirmake. The top-level
+Stirfile is as follows:
+
+<programlisting>
+@toplevel
+@strict
+
+@fileinclude @ignore "opts.smk"
+
+# You can modify these for compilation
+$WITH_WERROR ?= @false
+$CC ?= "clang"
+$CFLAGS ?= ["-Ofast", "-g", "-Wall", "-Wextra", "-Wno-missing-field-initializers", "-Wno-unused-parameter", "-Wno-tautological-compare", "-Wshadow", "-Wstrict-prototypes", "-Wmissing-prototypes", "-Wpointer-arith", "-fomit-frame-pointer", "-std=gnu11", "-fPIC"]
+$LDFLAGS ?= []
+$WITH_PYTHON ?= @false
+$WITH_NEW_CPU ?= @false
+
+@if($WITH_WERROR)
+  $CFLAGS = [@$CFLAGS, "-Werror"]
+@endif
+
+@if($WITH_PYTHON)
+  $PYTHON_CFLAGS_SET ?= @false
+  @if(!$PYTHON_CFLAGS_SET)
+    $PYTHON_CFLAGS ``= ["python3-config", "--includes"]
+  @endif
+  $CFLAGS = [@$CFLAGS, @$PYTHON_CFLAGS]
+@endif
+
+@if($WITH_NEW_CPU)
+  $CFLAGS = [@$CFLAGS, "-msse", "-msse2", "-msse3", "-mssse3", "-msse4.1", "-msse4.2", "-msse4", "-mavx", "-mavx2", "-msse4a", "-mbmi", "-mbmi2", "-march=skylake"]
+@endif
+
+# You can modify these during development
+$MODS = ["yy", "core", "main", "runtime", "test", "pybridge", "cbridge"]
+
+# You probably don't want to modify anything below this line
+
+@function $LIST_TO_DICTS_SIMPLE($list, $param)
+  @locvar $i=0
+  @locvar $dicts=[]
+  @for($i=0,$i&lt;$list[],$i=$i+1)
+    @append($dicts, {$param: $list[$i]})
+  @endfor
+  @return $dicts
+@endfunction
+
+@function $MODULE($lib, $src_lib, $src_prog, $libs, $unitdeps, $unitcmds)
+  @locvar $src = [@$src_lib, @$src_prog]
+  @locvar $obj_lib = @sufsuball($src_lib, ".c", ".o")
+  @locvar $obj_prog = @sufsuball($src_prog, ".c", ".o")
+  @locvar $obj = @sufsuball($src, ".c", ".o")
+  @locvar $dep = @sufsuball($src, ".c", ".d")
+  @locvar $prog = @sufsuball($src_prog, ".c", "")
+  @locvar $alldeps = [@$prog, $lib]
+  @locvar $i = 0
+  @addrule({"tgts": [{"name": "all"}], "attrs": {"phony": @true}, \
+            "deps": @L$LIST_TO_DICTS_SIMPLE($alldeps, "name")})
+  @addrule({"tgts": [{"name": "unit"}], "attrs": {"phony": @true}, \
+            "deps": @L$LIST_TO_DICTS_SIMPLE($unitdeps, "name"), \
+            "shells": [{"embed": @true, "cmds": $unitcmds}]})
+  @for($i=0,$i&lt;$obj[],$i=$i+1)
+    @addrule({"tgts": [{"name": $obj[$i]}], \
+              "deps": [{"name": $src[$i]}, {"name": $dep[$i]}], \
+              "shells": [{"cmd": [ \
+                          @D$(CC), @@D$(CFLAGS), "-c", "-o", $obj[$i], \
+                          $src[$i]]}]})
+    @addrule({"tgts": [{"name": $dep[$i]}], \
+              "deps": [{"name": $src[$i]}], \
+              "shells": [{"cmd": [ \
+                          @D$(CC), @@D$(CFLAGS), "-M", "-o", $dep[$i], \
+                          $src[$i]]}]})
+  @endfor
+  @for($i=0,$i&lt;$prog[],$i=$i+1)
+    @addrule({"tgts": [{"name": $prog[$i]}], \
+              "deps": [{"name": $obj_prog[$i]}, \
+                       {"name": $lib}, \
+                       @@L$LIST_TO_DICTS_SIMPLE($libs, "name")], \
+              "shells": [{"cmd": [ \
+                          @D$(CC), @@D$(CFLAGS), "-o", $prog[$i], \
+                          $obj_prog[$i], $lib, @$libs, @@D$(LDFLAGS), \
+                          "-lpthread", "-ldl"]}]})
+  @endfor
+  @addrule({"tgts": [{"name": $lib}], \
+            "deps": @L$LIST_TO_DICTS_SIMPLE($obj_lib, "name"), \
+            "shells": [{"embed": @true, "cmds": [ \
+                        ["rm", "-f", $lib], \
+                        ["ar", "rvs", $lib, @$obj_lib]]}]})
+@endfunction
+
+$MODS_ALL = @sufsuball($MODS, "", "/all")
+$MODS_UNIT = @sufsuball($MODS, "", "/unit")
+
+@phonyrule: 'all': $MODS_ALL
+
+@phonyrule: 'unit': $MODS_UNIT
+
+@dirinclude $MODS
+</programlisting>
+
+As an example, here is the Stirfile of the test subdirectory:
+<programlisting>
+@subfile
+@strict
+
+# You can modify these
+
+$SRC_LIB = ["lenprefixcparser.c", "reprefixcparser.c", "httpcparser.c", "httppycparser.c", "httprespcparser.c", "condparsercparser.c", "recursivecbcparser.c", "backtracktestcparser.c", "backtracktestcbcparser.c", "tokentheft1cparser.c", "smtpclientcparser.c", "tokentheft1scparser.c", "ssl1cparser.c", "ssl2cparser.c", "ssl3cparser.c", "ssl4cparser.c", "ssl5cparser.c", "ssl6cparser.c", "fooparsercparser.c"]
+$SRC_PROG = ["parserunit.c", "condtest.c", "httpcmain.c", "httpcmainprint.c", "httpcpytest.c", "httppyperf.c", "lenprefixcmain.c", "reprefixcmain.c", "httprespcmain.c", "recursivecbmain.c", "backtracktestmain.c", "backtracktestcbmain.c", "tokentheft1main.c", "tokentheft1smain.c", "smtpclientmain.c", "sslcmain.c", "sslcmainprint.c", "footest.c"]
+$LIB = "libtest.a"
+$CFLAGS += ["-I../runtime", "-I../core"]
+$LIBS = ["../core/libcore.a"]
+$UNITDEPS = ["parserunit"]
+$UNITCMDS = [["./parserunit"]]
+
+@call $MODULE($LIB, $SRC_LIB, $SRC_PROG, $LIBS, $UNITDEPS, $UNITCMDS)
+
+# Dependencies
+
+@deponly: 'httpcmain.d' 'httpcmain.o' 'httpcmainprint.d' 'httpcmainprint.o' \
+          'httpcparser.d' 'httpcparser.o': 'httpcparser.h'
+
+@deponly: 'footest.d' 'footest.o' 'fooparsercparser.d' 'fooparsercparser.o': \
+          'fooparsercparser.h'
+
+@deponly: 'httpcpytest.d' 'httpcpytest.o' 'httppyperf.d' 'httppyperf.o' \
+          'httppycparser.d' 'httppycparser.o': 'httppycparser.h'
+
+@deponly: 'recursivecbmain.d' 'recursivecbmain.o' \
+          'recursivecbcparser.d' 'recursivecbcparser.o': 'recursivecbcparser.h'
+
+@deponly: 'httprespcmain.d' 'httprespcmain.o' \
+          'httprespcparser.d' 'httprespcparser.o': 'httprespcparser.h'
+
+@deponly: 'backtracktestmain.d' 'backtracktestmain.o' \
+          'backtracktestcparser.d' 'backtracktestcparser.o': \
+          'backtracktestcparser.h'
+
+@deponly: 'backtracktestcbmain.d' 'backtracktestcbmain.o' \
+          'backtracktestcbcparser.d' 'backtracktestcbcparser.o': \
+          'backtracktestcbcparser.h'
+
+@deponly: 'lenprefixcmain.d' 'lenprefixcmain.o' \
+          'lenprefixcparser.d' 'lenprefixcparser.o': 'lenprefixcparser.h'
+
+@deponly: 'reprefixcmain.d' 'reprefixcmain.o' \
+          'reprefixcparser.d' 'reprefixcparser.o': 'reprefixcparser.h'
+
+@deponly: 'tokentheft1main.d' 'tokentheft1main.o' \
+          'tokentheft1cparser.d' 'tokentheft1cparser.o': 'tokentheft1cparser.h'
+
+@deponly: 'tokentheft1smain.d' 'tokentheft1smain.o' \
+          'tokentheft1scparser.d' 'tokentheft1scparser.o': \
+          'tokentheft1scparser.h'
+
+@deponly: 'smtpclientmain.d' 'smtpclientmain.o' \
+          'smtpclientcparser.d' 'smtpclientcparser.o': 'smtpclientcparser.h'
+
+@deponly: 'condtest.d' 'condtest.o' \
+          'condparsercparser.d' 'condparsercparser.o': 'condparsercparser.h'
+
+# Generated parsers
+
+$Y = "../main/yaleparser"
+
+'lenprefixcparser.h' 'lenprefixcparser.c': 'lenprefix.txt' $Y
+@	[$Y, @D&lt;, "b"]
+
+'reprefixcparser.h' 'reprefixcparser.c': 'reprefix.txt' $Y
+@	[$Y, @D&lt;, "b"]
+
+'fooparsercparser.h' 'fooparsercparser.c': 'fooparser.txt' $Y
+@	[$Y, @D&lt;, "b"]
+
+'httpcparser.h' 'httpcparser.c': 'httppaper.txt' $Y
+@	[$Y, @D&lt;, "b"]
+
+'httppycparser.h' 'httppycparser.c': 'httppy.txt' $Y
+@	[$Y, @D&lt;, "b"]
+
+'httprespcparser.h' 'httprespcparser.c': 'httpresp.txt' $Y
+@	[$Y, @D&lt;, "b"]
+
+'condparsercparser.h' 'condparsercparser.c': 'condparser.txt' $Y
+@	[$Y, @D&lt;, "b"]
+
+'recursivecbcparser.h' 'recursivecbcparser.c': 'recursivecb.txt' $Y
+@	[$Y, @D&lt;, "b"]
+
+'backtracktestcparser.h' 'backtracktestcparser.c': 'backtracktest.txt' $Y
+@	[$Y, @D&lt;, "b"]
+
+'backtracktestcbcparser.h' 'backtracktestcbcparser.c': 'backtracktestcb.txt' $Y
+@	[$Y, @D&lt;, "b"]
+
+'tokentheft1cparser.h' 'tokentheft1cparser.c': 'tokentheft1.txt' $Y
+@	[$Y, @D&lt;, "b"]
+
+'tokentheft1scparser.h' 'tokentheft1scparser.c': 'tokentheft1s.txt' $Y
+@	[$Y, @D&lt;, "b"]
+
+'smtpclientcparser.h' 'smtpclientcparser.c': 'smtpclient.txt' $Y
+@	[$Y, @D&lt;, "b"]
+
+# ------ Begin SSL dependencies --------
+
+@deponly: 'sslcmain.d' 'sslcmain.o' 'sslcmainprint.d' 'sslcmainprint.o': \
+          'ssl1cparser.h' 'ssl2cparser.h' 'ssl3cparser.h' \
+          'ssl4cparser.h' 'ssl5cparser.h' 'ssl6cparser.h'
+
+@deponly: 'ssl1cparser.d' 'ssl1cparser.o': \
+          'ssl1cparser.h' 'ssl2cparser.h' 'ssl3cparser.h' \
+          'ssl4cparser.h' 'ssl5cparser.h' 'ssl6cparser.h'
+
+@deponly: 'ssl2cparser.d' 'ssl2cparser.o': \
+          'ssl2cparser.h' 'ssl3cparser.h' \
+          'ssl4cparser.h' 'ssl5cparser.h' 'ssl6cparser.h'
+
+@deponly: 'ssl3cparser.d' 'ssl3cparser.o': \
+          'ssl3cparser.h' 'ssl4cparser.h' 'ssl5cparser.h' 'ssl6cparser.h'
+
+@deponly: 'ssl4cparser.d' 'ssl4cparser.o': \
+          'ssl4cparser.h' 'ssl5cparser.h' 'ssl6cparser.h'
+
+@deponly: 'ssl5cparser.d' 'ssl5cparser.o': 'ssl5cparser.h' 'ssl6cparser.h'
+
+@deponly: 'ssl6cparser.d' 'ssl6cparser.o': 'ssl6cparser.h'
+
+# ------ Begin SSL generated parsers --------
+
+'ssl1cparser.h' 'ssl1cparser.c': 'ssl1.txt' $Y
+@	[$Y, @D&lt;, "b"]
+
+'ssl2cparser.h' 'ssl2cparser.c': 'ssl2.txt' $Y
+@	[$Y, @D&lt;, "b"]
+
+'ssl3cparser.h' 'ssl3cparser.c': 'ssl3.txt' $Y
+@	[$Y, @D&lt;, "b"]
+
+'ssl4cparser.h' 'ssl4cparser.c': 'ssl4.txt' $Y
+@	[$Y, @D&lt;, "b"]
+
+'ssl5cparser.h' 'ssl5cparser.c': 'ssl5.txt' $Y
+@	[$Y, @D&lt;, "b"]
+
+'ssl6cparser.h' 'ssl6cparser.c': 'ssl6.txt' $Y
+@	[$Y, @D&lt;, "b"]
+
+# cdepincludes
+
+@cdepincludes @autophony @autotarget @ignore \
+  @sufsuball([@$SRC_PROG, @$SRC_LIB], ".c", ".d")
+</programlisting>
+
+</para>
     </sect1>
     <sect1>
       <title>stirmake</title>
