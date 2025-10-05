@@ -4509,13 +4509,147 @@ target allows it to work:
     </sect1>
     <sect1 xml:id="creatingscopes">
       <title>Creating new scopes, and holey scopes</title>
-      <!-- Specified already in a previous section -->
-      <!-- holey scopes -->
+<para>
+
+It is possible to create scopes with @beginscope and @endscope. For example:
+
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all': 'thisscope' 'subscope'
+
+$VAR = ["a"]
+
+@beginscope
+$VAR += ["b"]
+@phonyrule: 'subscope':
+@	["echo", @$VAR]
+@endscope
+
+@phonyrule: 'thisscope':
+@	["echo", @$VAR]
+</programlisting>
+
+In this case, there are two rules, 'thisscope' and 'subscope' which are in
+different scopes. Both rules print their idea of $VAR, which is different due
+to scoping. This Stirfile prints:
+<programlisting>
+stirmake: Using directory /home/YOURUSERNAME/beginscope
+[., subscope] echo a b
+a b
+[., thisscope] echo a
+a
+</programlisting>
+
+</para><para>
+
+Also, holey scopes were demonstrated already, but re-demonstrating them is
+relevant in this section again. Holey scope is a scope where implicit recursion
+to parent scope is not present, but you can always access the lexical parent
+scope explicitly with @LP. This provides a convenient way of controlling what
+is present in the sub-scope. Example from Stirfile of stirmake:
+
+<programlisting>
+@beginholeyscope
+  $(CC) = @LP$(CC)
+  $(CFLAGS) = @LP$(CFLAGS)
+  $(WITH_LUA) = @LP$(WITH_LUA)
+  $(LUAINCS) = @LP$(LUAINCS)
+  $(LUALIBS) = @LP$(LUALIBS)
+  $(FLEX) = @LP$(FLEX)
+  $(BYACC) = @LP$(BYACC)
+  @projdirinclude "abce"
+@endscope
+</programlisting>
+
+In this case, the defined variables are visible inside the holey scope (and
+inside the scope of the subproject "abce"), but others are not.
+
+</para>
     </sect1>
     <sect1 xml:id="namedscopes">
       <title>Named scopes and accessing them</title>
-      <!-- named scopes, begin(holey)scope and (proj)dirinclude -->
-      <!-- SC, SCO -->
+<para>
+
+Scopes can be named. With @beginscope or @beginholeyscope, it is possible
+to add a name of the created scope:
+
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all': 'thisscope' 'subscope'
+
+$VAR = ["a"]
+
+@beginscope $SCOPE
+$VAR += ["b"]
+@phonyrule: 'subscope':
+@	["echo", @$VAR]
+@endscope
+
+@phonyrule: 'thisscope':
+@	["echo", @$VAR]
+@	["echo", @@SC($SCOPE)$VAR]
+</programlisting>
+
+This prints:
+<programlisting>
+stirmake: Using directory /home/YOURUSERNAME/namedscope
+[., subscope] echo a b
+a b
+[., thisscope] echo a
+a
+[., thisscope] echo a b
+a b
+</programlisting>
+
+Note how in @@SC the first @ means "include the whole list into the array", and
+the second @ is part of the specifier @SC of accessing named scopes. Also
+instead of @SC you can use @SCO to prevent recursion to the parent of the named
+scope.
+
+</para><para>
+
+With @dirinclude and @projdirinclude, you specify the scope with @scopename:
+
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all': 'thisscope'
+
+$VAR = ["a"]
+
+@dirinclude @scopename $SCOPE "subdir"
+
+@phonyrule: 'thisscope':
+@	["echo", @$VAR]
+@	["echo", @@SC($SCOPE)$VAR]
+</programlisting>
+
+...and the subdir/Stirfile:
+<programlisting>
+@subfile
+@strict
+@phonyrule: 'all':
+$VAR += ["b"]
+</programlisting>
+
+...which prints:
+<programlisting>
+stirmake: Using directory /home/YOURUSERNAME/scopename
+[., thisscope] echo a
+a
+[., thisscope] echo a b
+a b
+</programlisting>
+
+</para><para>
+
+Note that @dirinclude can be used to include several directories in one line
+by having an array, but this does not work with @scopename. When @scopename is
+specified, only one included directory per line is permitted.
+
+</para>
     </sect1>
     <sect1 xml:id="dirupdirdown">
       <title>Specifying library lists that work everywhere</title>
