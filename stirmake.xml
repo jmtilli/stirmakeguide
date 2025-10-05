@@ -4503,9 +4503,20 @@ target allows it to work:
   </chapter>
   <chapter xml:id="scopingandsubdirectories">
     <title>Scoping and subdirectories</title>
-    <!-- lexical vs dynamic: we support both -->
-    <!-- holey scopes -->
-    <!-- named scopes -->
+    <sect1 xml:id="lexdyn">
+      <title>Lexical and dynamic scoping</title>
+      <!-- lexical vs dynamic: we support both -->
+    </sect1>
+    <sect1 xml:id="creatingscopes">
+      <title>Creating new scopes, and holey scopes</title>
+      <!-- Specified already in a previous section -->
+      <!-- holey scopes -->
+    </sect1>
+    <sect1 xml:id="namedscopes">
+      <title>Named scopes and accessing them</title>
+      <!-- named scopes, begin(holey)scope and (proj)dirinclude -->
+      <!-- SC, SCO -->
+    </sect1>
     <sect1 xml:id="dirupdirdown">
       <title>Specifying library lists that work everywhere</title>
       <!-- introduce problem of specifying static dependencies -->
