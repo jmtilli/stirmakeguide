@@ -4505,6 +4505,111 @@ target allows it to work:
     <title>Scoping and subdirectories</title>
     <sect1 xml:id="lexdyn">
       <title>Lexical and dynamic scoping</title>
+<para>
+
+Some programming languages are lexically scoped. Others are dynamically scoped.
+The programming language of stirmake, Amyplan, supports both scoping types.
+
+An example of lexical scoping can be made as follows. Let us assume there are
+two nested directories, scoping and scoping/subdir. Both of them contain a
+Stirfile, scoping/Stirfile:
+<programlisting>
+@toplevel
+@strict
+
+@phonyrule: 'all':
+
+$VAR = 1
+
+@function $FN()
+  @dump("---")
+  @dump(@L$VAR)
+  @dump(@D$VAR)
+@endfunction
+
+@call $FN()
+@dirinclude "subdir"
+</programlisting>
+...and scoping/subdir/Stirfile:
+<programlisting>
+@subfile
+@strict
+
+@phonyrule: 'all':
+
+$VAR = 2
+
+@call $FN()
+</programlisting>
+
+In this case, the Stirfile system execution with smka prints:
+<programlisting>
+stirmake: Using directory /home/YOURUSERNAME/scoping
+"---"
+1
+1
+"---"
+1
+2
+stirmake: Nothing to be done.
+</programlisting>
+
+So lexical scoping accesses the variable where the function was defined.
+Dynamic scoping accesses the variable where the function was called.
+
+</para><para>
+
+Six other scoping specifiers are:
+<itemizedlist mark="bullet">
+<listitem><para>@LP: lexical parent scope</para></listitem>
+<listitem><para>@LO: lexical scope without recursion to parent</para></listitem>
+<listitem><para>@LPO: lexical parent scope without recursion to grandparent</para></listitem>
+<listitem><para>@DP: dynamic parent scope</para></listitem>
+<listitem><para>@DO: dynamic scope without recursion to parent</para></listitem>
+<listitem><para>@DPO: dynamic parent scope without recursion to grandparent</para></listitem>
+</itemizedlist>
+
+It is also possible to use immediate evaluation:
+<itemizedlist mark="bullet">
+<listitem><para>@I: immediate scope</para></listitem>
+<listitem><para>@IO: immediate scope without recursion to parent</para></listitem>
+<listitem><para>@IP: immediate parent scope</para></listitem>
+<listitem><para>@IPO: immediate parent scope without recursion to grandparent</para></listitem>
+</itemizedlist>
+
+Immediate evaluation accesses the variable immediately, with no future
+changes applied. Example:
+<programlisting>
+@toplevel
+@strict
+
+@phonyrule: 'all':
+
+$VAR = 1
+
+@function $FN()
+  @dump(@L$VAR)
+  @dump(@I$VAR)
+@endfunction
+
+$VAR = 2
+
+@call $FN()
+</programlisting>
+
+This prints:
+<programlisting>
+2
+1
+stirmake: Nothing to be done.
+</programlisting>
+
+Note how the immediate access captures the variable immediately at parsing
+time, with no future changes applied. In contrast, lexical access uses the
+scope of function definition (lexical scoping), but latest variable within that
+scope.
+
+</para>
       <!-- lexical vs dynamic: we support both -->
     </sect1>
     <sect1 xml:id="creatingscopes">
