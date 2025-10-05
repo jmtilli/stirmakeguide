@@ -4262,12 +4262,98 @@ in stirmake.
     <sect1>
       <title>Integration to subproject cleaning systems with clean hooks</title>
       <!-- integration to subproject cleaning systems with clean hooks -->
+<para>
+
+Stirmake has automatic cleaning, but GNU make does not. If a stirmake project
+has GNU make based subprojects as git submodules, there needs to be ways to
+call the explicitly specified cleaning rules of the subprojects.
+
+</para><para>
+
+This is made possible by clean hooks. There are three of them: @cleanhook,
+@distcleanhook and @bothcleanhook for smka -c, smka -b and smka -bc,
+respectively. If the subproject does not support some of these hooks (an
+example: if there is "make clean" for cleaning object files and "make
+distclean" for cleaning everything, but no way to clean just binaries), the
+hook can be specified with "false" as the command, causing an error.
+
+</para><para>
+
+An example of calling clean hooks with make:
+<programlisting>
+@toplevel
+@strict
+
+@cleanhook:
+@	["make", "-C", "subproj", "clean"]
+
+@distcleanhook:
+@	["false"]
+
+@bothcleanhook:
+@	["make", "-C", "subproj", "distclean"]
+
+@phonyrule: 'all':
+@	["echo", "all"]
+</programlisting>
+
+</para>
     </sect1>
     <sect1>
       <title>Recursive directory dependencies</title>
-      <!-- recdep and detouchrule/rectgtrule/mayberule -->
+      <!-- recdep and detouchrule/rectgtrule/FIXME mayberule -->
+<para>
+
+Stirmake has the possibility to depend on the latest modification time of the
+directory hierarchy. An example: if you have a submodule "argon2" that builds
+"argon2/libargon.a", you can interface to it as follows:
+
+<programlisting>
+@toplevel
+@strict
+
+@rectgtrule: 'argon2/libargon2.a': @recdep 'argon2'
+@       ["make", "-C", "argon2"]
+
+@cleanhook:
+@       ["make", "-C", "argon2", "clean"]
+
+@bothcleanhook:
+@       ["make", "-C", "argon2", "clean"]
+</programlisting>
+
+Here the important keywords are @rectgtrule and @recdep. @recdep means that
+the rule depends on the latest modification time in the recursive directory
+hierarchy. An alternative to @rectgtrule is @detouchrule.
+
+</para><para>
+
+@detouchrule rolls back the timestamp of the sources so that if "make -C argon"
+would build one or more targets, the modification time of them would be newer
+than the modification time of some of the sources, meaning one of the targets
+would be considered "older" than the source. After @detouchrule, the recursive
+sources have timestamps rolled back, so none of them is considered "older" than
+some files in the recursive dependency hierarchy.
+
+</para><para>
+
+@rectgtrule rolls forward the timestamps of the targets to the same value, so
+one of the targets is not older than the other target and the sources. The
+timestamp is never rolled backwards, only forwards if there is any change.
+
+</para><para>
+
+Either @rectgtrule of @detouchrule should be specified if there is @recdep. It
+it up to the user to decide which is the better strategy, changing the
+timestamps of the recursive sources, or hanging the timestamps of the targets.
+Without either, if the sub-make builds two or more targets, it is guaranteed
+that one of the targets is newer than the other, which causes an unnecessary
+rebuild which doesn't happen with @rectgtrule or @detouchrule if the target
+list is fully specified.
+
+</para>
     </sect1>
-    <!-- make in same directory with mayberule -->
+    <!-- make in same directory with FIXME mayberule -->
   </chapter>
   <chapter xml:id="scopingandsubdirectories">
     <title>Scoping and subdirectories</title>
