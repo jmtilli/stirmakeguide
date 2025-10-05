@@ -6305,17 +6305,35 @@ examples previously.
   <title>Advanced stirmake programming</title>
   <chapter xml:id="programmingwithamyplan">
     <title>Programming Stirmake with Amyplan</title>
-    <!-- abce and amyplan -->
-    <!-- installing amyplan in abce -->
-    <!-- creating amyplan scripts -->
-    <!-- lack of REPL due to being yacc-based -->
-    <!-- constant strings and modifiable packet buffers, @str2pb, @pb2str -->
-    <!-- pbnew -->
-    <!-- packet buffer access with be8, le8, be16, be32, le16, le32 -->
-    <!-- TODO: memcpy with packet buffers, needs abce support -->
-    <!-- io streams and interacting with them -->
-    <!-- math, fpclassify -->
-    <!-- JSON -->
+    <sect1>
+      <title>abce and Amyplan</title>
+    </sect1>
+    <sect1>
+      <title>Installing Amyplan in abce</title>
+    </sect1>
+    <sect1>
+      <title>Creating Amyplan scripts</title>
+    </sect1>
+    <sect1>
+      <title>No read/eval/print loop (REPL)</title>
+    </sect1>
+    <sect1>
+      <title>Immutable strings and mutable packet buffers</title>
+      <!-- @str2pb, @pb2str -->
+      <!-- @pbnew -->
+      <!-- packet buffer access with be8, le8, be16, be32, le16, le32 -->
+      <!-- TODO: memcpy with packet buffers, needs abce support -->
+    </sect1>
+    <sect1>
+      <title>I/O streams and interacting with them</title>
+    </sect1>
+    <sect1>
+      <title>Mathematical functions and floating-point numbers</title>
+      <!-- fpclassify -->
+    </sect1>
+    <sect1>
+      <title>JSON</title>
+    </sect1>
   </chapter>
   <chapter xml:id="advancedtricks">
     <title>Advanced tricks</title>
