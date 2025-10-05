@@ -4109,6 +4109,58 @@ command in any subdirectory, and it will work.
     </sect1>
     <sect1>
       <title>Controlling what to export with holey scopes</title>
+<para>
+
+Stirmake uses recursive scoping, where if the variable $(CC) is accessed, it
+accesses first $(CC) in the current scope (lexical or dynamic specified by @L
+or @D before the variable name), then its parent scope, then its grandparent
+scope, etc. until there are no longer any parent scopes. This means that if you
+have a complex Stirfile and include a subproject, everything in the parent
+scope is visible to the subproject. This may not be optimal in all cases. It
+may be useful to be able to specify what variables are visible to the
+subproject.
+
+</para><para>
+
+This is possible with @beginholeyscope and @endscope. A holey scope is a scope
+that terminates the recursive scoping so that the parent scope is not accessed
+by default, but the lexical or dynamic parent scope can still be explicitly
+accessed with @LP or @DP.
+
+</para><para>
+
+Example from Stirfile of stirmake:
+
+<programlisting>
+@beginholeyscope
+  $(CC) = @LP$(CC)
+  $(CFLAGS) = @LP$(CFLAGS)
+  $(WITH_LUA) = @LP$(WITH_LUA)
+  $(LUAINCS) = @LP$(LUAINCS)
+  $(LUALIBS) = @LP$(LUALIBS)
+  $(FLEX) = @LP$(FLEX)
+  $(BYACC) = @LP$(BYACC)
+  @projdirinclude "abce"
+@endscope
+</programlisting>
+
+In this case, the subproject abce sees only $CC, $CFLAGS, $WITH_LUA, $LUAINCS,
+$LUALIBS, $FLEX and $BYACC and all other variables are left undefined.  The
+variables are taken from the scope of the Stirfile in which @beginholeyscope is
+defined. Note how @LP avoids the recursion break of @beginholeyscope, by
+accessing the parent scope (or the grandparent scope or the parent of
+grandparent, etc.).
+
+</para><para>
+
+If you want to access the lexical parent scope without recursion to
+grandparent, or the dynamic parent scope without recursion to grandparent, you
+can do so with @LPO or @DPO. Similarly, you can access the lexical or dynamic
+scope without recursion to parent scope by @LO and @DO. All scope type
+specifiers with character O terminate recursion, and character P mean "access
+parent explicitly".
+
+</para>
     </sect1>
   </chapter>
   <chapter xml:id="oneprojectatatime">
