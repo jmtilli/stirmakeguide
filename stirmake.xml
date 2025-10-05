@@ -4758,9 +4758,71 @@ specified, only one included directory per line is permitted.
     </sect1>
     <sect1 xml:id="dirupdirdown">
       <title>Specifying library lists that work everywhere</title>
-      <!-- introduce problem of specifying static dependencies -->
-      <!-- @dirdown @dirup -->
-      <!-- ~/stirmake/examples/addld -->
+<para>
+
+All stirmake commands are executed in the directory where the rule was created.
+It is possible to refer to files and directories inside parent directories with
+.. entries. For example, if you have directory prog/prog1/ and library
+lib/libcommon.a, inside the prog/prog1/ directory you would refer to this as:
+'../../lib/libcommon.a'.
+
+</para><para>
+
+However, sometimes changes will be made to the directory structures. An example
+is where prog/prog1/ is moved to prog1/ directly on the top-level directory. In
+this case, the '../../lib/libcommon.a' would fail and need to be modified to
+'../lib/libcommon.a'. Clearly, this kind of approach is not maintainable.
+
+</para><para>
+
+There are two special directory built-ins that are helpful in managing path
+strings. They are @dirdown and @dirup.
+
+</para><para>
+
+For example, inside prog/prog1 you may instead of '../../lib/libcommon.a' use
+@dirup . '/lib/libcommon.a'. In this case, @dirup gives the relative path to
+the top-level directory. This way, it is possible for example in the top-level
+Stirfile to add this variable function with delayed evaluation:
+
+<programlisting>
+$LIBCOMMON&lt;&gt; = @dirup . '/lib/libcommon.a'
+</programlisting>
+
+If this function is evaluated as $LIBCOMMON&lt;&gt; in any subdirectory, it
+gives the correct path to libcommon.a.
+
+</para><para>
+
+Also it is possible in sub-Stirfile lib/Stirfile to add this:
+<programlisting>
+$DIRDOWN = @dirdown
+$LIBCOMMON&lt;&gt; = @dirup . '/' . @L$DIRDOWN . '/libcommon.a'
+</programlisting>
+
+Note the usage of lexical scoping to evaluate $DIRDOWN, so that the @dirdown
+from top-level diretory to lib directory is always used, not to the directory
+where the caller is present.
+
+</para><para>
+
+Then in the top-level Stirfile you would have:
+<programlisting>
+@dirinclude @scopename $LIBSC "lib"
+$LIBCOMMON = @SC($LIBSC) $LIBCOMMON
+@dirinclude "prog"
+</programlisting>
+
+Then any Stirfile inside prog can use $LIBCOMMON&lt;&gt; which gives the
+correct path to libcommon.a.
+
+</para><para>
+
+This way, library linking with relative paths is easy. Also it is possible to
+use the same way to construct include directory arguments to C compiler (-I
+argument).
+
+</para>
     </sect1>
   </chapter>
   <chapter xml:id="examplelargeprojects">
