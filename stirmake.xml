@@ -4301,7 +4301,6 @@ An example of calling clean hooks with make:
     </sect1>
     <sect1>
       <title>Recursive directory dependencies</title>
-      <!-- recdep and detouchrule/rectgtrule/FIXME mayberule -->
 <para>
 
 Stirmake has the possibility to depend on the latest modification time of the
@@ -4351,9 +4350,34 @@ that one of the targets is newer than the other, which causes an unnecessary
 rebuild which doesn't happen with @rectgtrule or @detouchrule if the target
 list is fully specified.
 
+</para><para>
+
+If neither @rectgtrule nor @detouchrule is used for a rule that is built using
+a sub-make, at least @mayberule should be specified. @mayberule means the rule
+may or may not update its target. With make, this is always the case, since
+make intelligently deduces based on timestamps whether the target is
+up-to-date. If stirmake as the parent process decudes target is not up-to-date,
+but make as the child process deduces target is up-to-date, stirmake executes a
+command that does not modify the timestamp of the target in this special case.
+In this case, stirmake would fail. Specifying @mayberule (and colon) before the
+target allows it to work:
+<programlisting>
+@toplevel
+@strict
+
+@mayberule: 'argon2/libargon2.a': @recdep 'argon2'
+@       ["make", "-C", "argon2"]
+
+@cleanhook:
+@       ["make", "-C", "argon2", "clean"]
+
+@bothcleanhook:
+@       ["make", "-C", "argon2", "clean"]
+</programlisting>
+
+
 </para>
     </sect1>
-    <!-- make in same directory with FIXME mayberule -->
   </chapter>
   <chapter xml:id="scopingandsubdirectories">
     <title>Scoping and subdirectories</title>
