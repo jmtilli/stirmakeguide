@@ -4767,6 +4767,8 @@ specified, only one included directory per line is permitted.
       <title>Specifying library lists that work everywhere</title>
 <para>
 
+<!-- FIXME @dirupall @dirdownall -->
+
 All stirmake commands are executed in the directory where the rule was created.
 It is possible to refer to files and directories inside parent directories with
 .. entries. For example, if you have directory prog/prog1/ and library
@@ -6489,6 +6491,7 @@ interpreter.
   </chapter>
   <chapter xml:id="advancedtricks">
     <title>Advanced tricks</title>
+    <!-- build directory, @dirup/build/@dirdown not @dirupall / @dirdownall -->
     <!-- pattern rules, TODO perhaps earlier? -->
     <!-- scopes stored in variables -->
     <!-- function data types, builtin wrappers -->
