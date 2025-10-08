@@ -6491,6 +6491,7 @@ interpreter.
   </chapter>
   <chapter xml:id="advancedtricks">
     <title>Advanced tricks</title>
+    <!-- @orderonly -->
     <!-- build directory, @dirup/build/@dirdown not @dirupall / @dirdownall -->
     <!-- pattern rules, TODO perhaps earlier? -->
     <!-- scopes stored in variables -->
