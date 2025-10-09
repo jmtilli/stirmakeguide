@@ -6540,6 +6540,73 @@ the right-hand side of an assigment expression.
     </sect1>
     <sect1>
       <title>I/O streams and interacting with them</title>
+<para>
+
+Stirmake supports reading and writing files. The data to write has to be in
+a packet buffer, and the bounds are specified. For example, the following code
+writes JSON into a file
+
+<programlisting>
+#!/usr/bin/env amyplan
+
+@function $main($argv,$env)
+  @locvar $json = {"a": [1,2,3,@nil,@false,"foo"], "b": @false, "c": 4.5, "d": @nil}
+  @locvar $f = @fopen("json.txt", "w")
+  @locvar $pb = @str2pb(@jsonenc($json))
+  @fwrite($f, $pb, 0, $pb{@})
+  @return 0
+@endfunction
+</programlisting>
+
+Here the supported file modes are the same that fopen in C supports: r, r+, w,
+w+, a, a+, rb, r+b, wb, w+b, ab, a+b.
+
+</para><para>
+
+The following code reads the JSON back:
+
+<programlisting>
+#!/usr/bin/env amyplan
+
+@function $main($argv,$env)
+  @locvar $f = @fopen("json.txt", "r")
+  @locvar $pb = @pbnew()
+  @dump(@fgetdelim($f, @nil, $pb, 0, @nil))
+  @dump(@pb2str($pb, 0, $pb{@}))
+  @dump(@jsondec(@pb2str($pb, 0, $pb{@})))
+  @return 0
+@endfunction
+</programlisting>
+
+The first argument is the I/O stream, the second is the delimiter, a string of
+size 1, usually "\n" or @nil if you want to read everything, then the packet
+buffer, the offset inside that packet buffer, and the maximum number of bytes
+to read or @nil if you want to read everything. If the packet buffer was not
+initially empty, it may be longer than what was read; in this case, the return
+value of @fgetdelim can be used to determine how many bytes were read.
+
+</para><para>
+
+The file will be closed whenever it goes out of scope (causing reference
+counting to destroy it), but it is possible to close it earlier with @fclose:
+
+<programlisting>
+#!/usr/bin/env amyplan
+
+@function $main($argv,$env)
+  @locvar $f = @fopen("json.txt", "r")
+  @locvar $pb = @pbnew()
+  @dump(@fgetdelim($f, @nil, $pb, 0, @nil))
+  @fclose($f)
+  @dump(@pb2str($pb, 0, $pb{@}))
+  @dump(@jsondec(@pb2str($pb, 0, $pb{@})))
+  @return 0
+@endfunction
+</programlisting>
+
+<!-- FIXME seeking & @fread -->
+
+</para>
     </sect1>
     <sect1>
       <title>Mathematical functions and floating-point numbers</title>
