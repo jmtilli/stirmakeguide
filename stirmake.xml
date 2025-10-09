@@ -6474,9 +6474,68 @@ interpreter.
     </sect1>
     <sect1>
       <title>Immutable strings and mutable packet buffers</title>
-      <!-- @str2pb, @pb2str -->
-      <!-- @pbnew -->
-      <!-- packet buffer access with be8, le8, be16, be32, le16, le32 -->
+<para>
+
+Amyplan supports two data types that can be used to represent character strings
+and binary data too, since there is no limitation that a string cannot contain
+the NUL character. The data types are strings and packet buffers.
+
+</para><para>
+
+String and packet buffers differ in their mutability. Strings are always
+immutable and therefore can be used as keys in a tree, whereas packet buffers
+are mutable.
+
+</para><para>
+
+Strings can be converted to packet buffers and packet buffers can be converted
+to strings with @str2pb and @pb2str:
+<programlisting>
+#!/usr/bin/env amyplan
+
+@function $main($argv,$env)
+  @locvar $str = "foobar"
+  @locvar $pb = @str2pb($str)
+  @locvar $str2 = @pb2str($pb, 0, $pb{@})
+  @dump($str2)
+  @return 0
+@endfunction
+</programlisting>
+
+Note how @pb2str requires specifying the bounds, and that $pb{@} gives the
+length of the packet buffer.
+
+</para><para>
+
+Packet buffers can be created with @pbnew and you can assign into its length,
+and you can access the individual bytes:
+
+<programlisting>
+#!/usr/bin/env amyplan
+
+@function $main($argv,$env)
+  @locvar $pb = @pbnew()
+  @locvar $str2 = @nil
+  $pb{@} = 5
+  $pb{@0,@be8} = ('A')[@0]
+  $pb{@1,@be8} = ('B')[@0]
+  $pb{@2,@be8} = ('C')[@0]
+  $pb{@3,@be8} = ('D')[@0]
+  $pb{@4,@be8} = ('E')[@0]
+  $str2 = @pb2str($pb, 0, $pb{@})
+  @dump($str2)
+  @return 0
+@endfunction
+</programlisting>
+
+This sets the fields in packet buffer with width of 8 bits (big-endian but that
+doesn't matter since little-endian and big-endian 8 bits are equal). Wider
+fields can be accessed with @be16, @le16, @be32 and @le32. Similarly, it is
+possible to get fields as opposed to setting them by having the field access on
+the right-hand side of an assigment expression.
+
+</para>
+
       <!-- TODO: memcpy with packet buffers, needs abce support -->
     </sect1>
     <sect1>
