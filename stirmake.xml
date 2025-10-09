@@ -4767,8 +4767,6 @@ specified, only one included directory per line is permitted.
       <title>Specifying library lists that work everywhere</title>
 <para>
 
-<!-- FIXME @dirupall @dirdownall -->
-
 All stirmake commands are executed in the directory where the rule was created.
 It is possible to refer to files and directories inside parent directories with
 .. entries. For example, if you have directory prog/prog1/ and library
@@ -4784,18 +4782,21 @@ this case, the '../../lib/libcommon.a' would fail and need to be modified to
 
 </para><para>
 
-There are two special directory built-ins that are helpful in managing path
-strings. They are @dirdown and @dirup.
+There are four special directory built-ins that are helpful in managing path
+strings. They are @dirdownall and @dirupall, and @dirdown and @dirup. The first
+two give paths to/from the root of the project structure, the last two give
+paths to/from the root of the current project.
 
 </para><para>
 
 For example, inside prog/prog1 you may instead of '../../lib/libcommon.a' use
-@dirup . '/lib/libcommon.a'. In this case, @dirup gives the relative path to
-the top-level directory. This way, it is possible for example in the top-level
-Stirfile to add this variable function with delayed evaluation:
+@dirupall . '/lib/libcommon.a'. In this case, @dirupall gives the relative path
+to the top-level directory of the entire project structure. This way, it is
+possible for example in the top-level Stirfile to add this variable function
+with delayed evaluation:
 
 <programlisting>
-$LIBCOMMON&lt;&gt; = @dirup . '/lib/libcommon.a'
+$LIBCOMMON&lt;&gt; = @dirupall . '/lib/libcommon.a'
 </programlisting>
 
 If this function is evaluated as $LIBCOMMON&lt;&gt; in any subdirectory, it
@@ -4805,11 +4806,11 @@ gives the correct path to libcommon.a.
 
 Also it is possible in sub-Stirfile lib/Stirfile to add this:
 <programlisting>
-$DIRDOWN = @dirdown
-$LIBCOMMON&lt;&gt; = @dirup . '/' . @L$DIRDOWN . '/libcommon.a'
+$DIRDOWN = @dirdownall
+$LIBCOMMON&lt;&gt; = @dirupall . '/' . @L$DIRDOWN . '/libcommon.a'
 </programlisting>
 
-Note the usage of lexical scoping to evaluate $DIRDOWN, so that the @dirdown
+Note the usage of lexical scoping to evaluate $DIRDOWN, so that the @dirdownall
 from top-level diretory to lib directory is always used, not to the directory
 where the caller is present.
 
