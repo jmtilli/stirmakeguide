@@ -6492,7 +6492,50 @@ interpreter.
   </chapter>
   <chapter xml:id="advancedtricks">
     <title>Advanced tricks</title>
-    <!-- @orderonly -->
+    <sect1>
+      <title>Order-only dependencies</title>
+<para>
+
+The modification timestamp of directories is always modified whenever new files
+are created in that directory, but not when new files are created in some
+subdirectory of that directory. Also creation of files can change the size of
+the directory on the disk. For these reasons, it is not good idea to depend on
+a directory. Usually you want to depend on either of two things: (1) last
+modification time recursively inside the directory, or (2) the existence of the
+directory.
+
+</para><para>
+
+For example, if you want to store compiled object files into directory "build"
+at the same level as the source files, the directory may not already exist. So
+any rule to compile sources into objects in that directory should depend on the
+existence of the directory, with a rule to create the directory if it doesn't
+exist. It is achieved like this:
+
+<programlisting>
+@toplevel
+@strict
+$SRCS = ["test.c"]
+$OBJS = @presuball(@sufsuball($SRCS, ".c", ".o"), "", "build/")
+
+@phonyrule: 'all': $OBJS
+
+@patrule: $OBJS: "build/%.o": "%.c" @orderonly "build"
+@	["cc", "-c", "-o", $@, $&lt;]
+
+"build":
+@	["mkdir", "-p", $@]
+</programlisting>
+
+This Stirfile compiles test.c into build/test.o, creating the directory if it
+doesn't exist. The command to create build directory is not executed again if
+the timestmap of the build directory changes. Also, if the timestamp of the
+build directory changes, no object file is rebuilt because it is an order-only
+dependency.
+
+</para>
+    </sect1>
+
     <!-- build directory, @dirup/build/@dirdown not @dirupall / @dirdownall, @presuball -->
     <!-- pattern rules, TODO perhaps earlier? -->
     <!-- scopes stored in variables -->
