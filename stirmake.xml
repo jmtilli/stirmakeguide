@@ -1242,12 +1242,12 @@ $CFLAGS += ["-I../lib"]
 </para><para>
 
 Note the line continuation syntax where immediately before the newline the
-backslash is placed, and the line continues on the following line. It
-is important that the backslash is immediately before the newline and that
-there are no spaces before it. Since stirmake uses newline for terminating
-statements, like Python does, there has to be the line continuation syntax
-for convenience. Implicit continuation with parentheses, square brackets or
-curly braces is not supported.
+backslash is placed, and the line continues on the following line. It is
+important that the backslash is immediately before the newline and that there
+are no spaces before the newline and after the backslash. Since stirmake uses
+newline for terminating statements, like Python does, there has to be the line
+continuation syntax for convenience. Implicit continuation with parentheses,
+square brackets or curly braces is not supported.
 
 </para><para>
 
