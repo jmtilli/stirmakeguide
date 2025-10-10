@@ -6604,7 +6604,59 @@ counting to destroy it), but it is possible to close it earlier with @fclose:
 @endfunction
 </programlisting>
 
-<!-- FIXME seeking & @fread -->
+It is also possible to read content from I/O stream using @fread as opposed to
+@fgetdelim, but in most applications @fgetdelim is expected to be better.
+@fread does not take a delimiter so reading exactly one line isn't possible.
+@fread also requires maximum read size and you cannot specify @nil there. Also,
+@fread does not grow the packet buffer automatically, so you have to grow it
+before the read operation, and maybe shrink it after the read is done. Example
+of @fread:
+
+<programlisting>
+#!/usr/bin/env amyplan
+
+@function $main($argv,$env)
+  @locvar $f = @fopen("json.txt", "r")
+  @locvar $pb = @pbnew()
+  @locvar $bytes_read = @nil
+  $pb{@} = 8192
+  $bytes_read = @fread($f, $pb, 0, 8192)
+  $pb{@} = $bytes_read
+  @fclose($f)
+  @dump(@pb2str($pb, 0, $pb{@}))
+  @dump(@jsondec(@pb2str($pb, 0, $pb{@})))
+  @return 0
+@endfunction
+</programlisting>
+
+You can also seek in I/O streams using @fseek. It takes three arguments: I/O
+stream, offset and whence, in this order. Whence 0 is absolute indexing, whence
+1 is indexing from current position (negative indices permitted), whence 2 is
+indexing from end (negative index or zero mandatory). It returns the absolute
+position from start. Example:
+
+<programlisting>
+#!/usr/bin/env amyplan
+
+@function $main($argv,$env)
+  @locvar $f = @fopen("json.txt", "r")
+  @locvar $pb1 = @pbnew()
+  @locvar $pb2 = @pbnew()
+  @locvar $bytes_read = @nil
+  $pb1{@} = 8192
+  $bytes_read = @fread($f, $pb1, 0, 8192)
+  $pb1{@} = $bytes_read
+  @dump(@fseek($f, 0, 0))
+  @fgetdelim($f, @nil, $pb2, 0, @nil)
+  @fclose($f)
+  @dump(@jsondec(@pb2str($pb1, 0, $pb1{@})))
+  @dump(@jsondec(@pb2str($pb2, 0, $pb2{@})))
+  @return 0
+@endfunction
+</programlisting>
+
+This code seeks into absolute offset 0 to read the same data again using a
+different function to read it. The dump of position is in this case zero.
 
 </para>
     </sect1>
