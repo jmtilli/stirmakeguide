@@ -6895,7 +6895,37 @@ the extra added dependency, with @deponly.
     <!-- dynamically adding rules -->
     <!-- dynamically adding dependencies -->
     <!-- version conditionals and minimum version requirements, future b-ins -->
-    <!-- finding gitmake version and version history -->
+    <sect1>
+      <title>Finding stirmake version and version history</title>
+<para>
+
+Stirmake knows its entire git version history. You may query for the SHA1 hash
+of the current version, or query all past versions too. The reason for knowing
+the entire git version history is that it's then possible to demand that at
+least a certain stirmake version is present, or to dynamically check with @if
+that a certain version is present and if not, not execute that @if block.
+
+</para><para>
+
+How to query for current git version:
+
+<programlisting>
+stirmake -v
+</programlisting>
+
+Alternatively, stirmake may be substituted to smka, smkt or smkp.
+
+</para><para>
+
+This prints stirmake version and its license and author list. To print the
+entire git version history, you may run:
+
+<programlisting>
+stirmake -G
+</programlisting>
+
+</para>
+    </sect1>
     <!-- hacking abce: need for all to be visible to abce at all times -->
   </chapter>
   </part>
