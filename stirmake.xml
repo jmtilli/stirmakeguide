@@ -2,8 +2,6 @@
 <!-- vim: set noai indentexpr&
 -->
 
-<!-- TODO somewhere: backslash at line end -->
-
 <book xml:id="stirmake" xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink" version="5.0">
   <info>
     <title>Scalable true implementation of recursive make (stirmake)</title>
