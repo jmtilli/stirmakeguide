@@ -3357,15 +3357,6 @@ list of what to compile.
 
 </para>
     </sect1>
-    <!-- tab, at-tab, at-at-tab -->
-    <!-- the dangers of shell expansion -->
-    <!-- shell can still be manually invoked -->
-    <!-- build command and file size database -->
-    <!-- move madness -->
-    <!-- ignore -->
-    <!-- noecho -->
-    <!-- ismake and automatic make detection -->
-    <!-- @glob and dangers of @glob in the middle of many commands -->
   </chapter>
   <chapter xml:id="cleaning">
     <title>Automated cleaning with stirmake</title>
@@ -4390,7 +4381,6 @@ in stirmake.
     </sect1>
     <sect1>
       <title>Integration to subproject cleaning systems with clean hooks</title>
-      <!-- integration to subproject cleaning systems with clean hooks -->
 <para>
 
 Stirmake has automatic cleaning, but GNU make does not. If a stirmake project
@@ -4617,7 +4607,6 @@ scope of function definition (lexical scoping), but latest variable within that
 scope.
 
 </para>
-      <!-- lexical vs dynamic: we support both -->
     </sect1>
     <sect1 xml:id="creatingscopes">
       <title>Creating new scopes, and holey scopes</title>
