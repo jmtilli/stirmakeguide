@@ -6852,7 +6852,45 @@ error to use an incorrect number of arguments.
 
 </para>
     </sect1>
-    <!-- deponly for additional dependencies -->
+    <sect1>
+      <title>@deponly for additional dependencies</title>
+<para>
+
+In stirmake, it is an error to specify the same rule twice with different
+dependency lists. Make happily accepts such constructs, but stirmake does not.
+The reason in stirmake being that the commands to execute and other important
+rule parameters need to be unambiguous.
+
+</para><para>
+
+However, sometimes you may want to add extra dependencies to a rule later, for
+example inside an @if block that may or may not, depending on the environment,
+add the extra dependencies to the rule. This is possible with @deponly:
+
+<programlisting>
+@toplevel
+@strict
+
+@phonyrule: 'all': 'test'
+
+'test': 'test.txt'
+@	["touch", $@]
+
+@deponly: 'test': 'test2.txt'
+
+'test.txt':
+@	["touch", $@]
+
+'test2.txt':
+@	["touch", $@]
+</programlisting>
+
+This stirfile touches not only test and test.txt, but also test2.txt, due to
+the extra added dependency, with @deponly.
+
+</para>
+    </sect1>
+
     <!-- @order and @wait -->
     <!-- dynamically adding rules -->
     <!-- dynamically adding dependencies -->
