@@ -6709,6 +6709,44 @@ It is also possible to classify numbers using @fpclassify:
     </sect1>
     <sect1>
       <title>JSON</title>
+<para>
+
+Thanks to the typing system of Amyplan, supporting JSON is easy. There are two
+functions, @jsondec and @jsonenc. Note that the JSON is represented as a
+string, not as a packet buffer.
+
+</para><para>
+
+Here's how to encode JSON:
+
+<programlisting>
+#!/usr/bin/env amyplan
+
+@function $main($argv,$env)
+  @locvar $struct = {'a': [1,2,3], 'b': @nil, 'c': @false, 'd': 'string'}
+  @dump(@jsonenc($struct))
+  @return 0
+@endfunction
+</programlisting>
+
+Note how the JSON contains pretty-printing with spaces and newlines, but the
+@dump command prints it as a string, with newlines as \n.
+
+</para><para>
+
+It is also possible to decode JSON:
+
+<programlisting>
+#!/usr/bin/env amyplan
+
+@function $main($argv,$env)
+  @locvar $json = '{"a": [1,2,3], "b": null, "c": false, "d": "string"}'
+  @dump(@jsondec($json))
+  @return 0
+@endfunction
+</programlisting>
+
+</para>
     </sect1>
   </chapter>
   <chapter xml:id="advancedtricks">
