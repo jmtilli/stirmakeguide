@@ -6781,9 +6781,15 @@ dependency.
 
 </para>
     </sect1>
-
-    <!-- build directory, @dirup/build/@dirdown not @dirupall / @dirdownall, @presuball -->
-    <!-- pattern rules, TODO perhaps earlier? -->
+    <sect1>
+      <title>Separate build directory</title>
+      <!-- build directory, @dirup/build/@dirdown not @dirupall / @dirdownall, @presuball -->
+    </sect1>
+    <sect1>
+      <title>Pattern rules</title>
+      <!-- pattern rules, TODO perhaps earlier? -->
+      <!-- sufsuball, possibility to construct a string inside parentheses -->
+    </sect1>
     <sect1>
       <title>Scopes stored in variables</title>
 <para>
@@ -6890,11 +6896,23 @@ the extra added dependency, with @deponly.
 
 </para>
     </sect1>
+    <sect1>
+      <title>@order and @wait</title>
+      <!-- @order and @wait -->
+    </sect1>
+    <sect1>
+      <title>dynamically adding dependencies</title>
+      <!-- dynamically adding dependencies -->
+    </sect1>
+    <sect1>
+      <title>dynamically adding rules</title>
+      <!-- dynamically adding rules -->
+    </sect1>
 
-    <!-- @order and @wait -->
-    <!-- dynamically adding rules -->
-    <!-- dynamically adding dependencies -->
-    <!-- version conditionals and minimum version requirements, future b-ins -->
+    <sect1>
+      <title>Version conditionals and minimum version requirements, future builtins</title>
+      <!-- version conditionals and minimum version requirements, future b-ins -->
+    </sect1>
     <sect1>
       <title>Finding stirmake version and version history</title>
 <para>
@@ -6926,7 +6944,10 @@ stirmake -G
 
 </para>
     </sect1>
-    <!-- hacking abce: need for all to be visible to abce at all times -->
+    <sect1>
+      <title>Hacking abce</title>
+      <!-- hacking abce: need for all to be visible to abce at all times -->
+    </sect1>
   </chapter>
   </part>
 </book>
