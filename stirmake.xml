@@ -6784,7 +6784,36 @@ dependency.
 
     <!-- build directory, @dirup/build/@dirdown not @dirupall / @dirdownall, @presuball -->
     <!-- pattern rules, TODO perhaps earlier? -->
-    <!-- scopes stored in variables -->
+    <sect1>
+      <title>Scopes stored in variables</title>
+<para>
+
+It has already been demonstrated that Stirmake and Amyplan offer both lexical
+and dynamic scoping with @L and @D, respectively. However, it is also possible
+to store scope in a variable and refer to that scope later. An example:
+
+<programlisting>
+@toplevel
+@strict
+
+@phonyrule: 'all':
+
+@beginscope $NAMED
+  $X = 5
+@endscope
+
+$ANOTHERREF = $NAMED
+
+@call @dump(@SC($ANOTHERREF)$X)
+</programlisting>
+
+The reference to a named scope is @SC($NAMEOFTHESCOPE), which can be used just
+like @D and @L. So the program prints 5, as you would expect. The scope can be
+passed around as much as you want, in that example it was passed around to a
+second named variable after defining it with the first named variable.
+
+</para>
+    </sect1>
     <sect1>
       <title>Function data types and builtin wrappers</title>
 <para>
