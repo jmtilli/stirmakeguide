@@ -6823,7 +6823,6 @@ error to use an incorrect number of arguments.
 
 </para>
     </sect1>
-    <!-- function data types, builtin wrappers -->
     <!-- deponly for additional dependencies -->
     <!-- @order and @wait -->
     <!-- dynamically adding rules -->
