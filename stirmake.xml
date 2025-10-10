@@ -6785,6 +6785,44 @@ dependency.
     <!-- build directory, @dirup/build/@dirdown not @dirupall / @dirdownall, @presuball -->
     <!-- pattern rules, TODO perhaps earlier? -->
     <!-- scopes stored in variables -->
+    <sect1>
+      <title>Function data types and builtin wrappers</title>
+<para>
+
+Function is a basic data type in Amyplan. When defining a function, the
+named variable gets a reference to this defined function. The value of
+that variable can be passed around. An example:
+
+<programlisting>
+#!/usr/bin/env amyplan
+
+@function $test($x)
+  @dump($x)
+  @return 0
+@endfunction
+@function $calltest($fnptr, $val)
+  @return $fnptr($val)
+@endfunction
+@function $main($argv, $env)
+  @locvar $fnptr = @L$test
+  @dump(@L$calltest($fnptr, 5))
+  @return 0
+@endfunction
+</programlisting>
+
+Note that builtins such as @dump are not functions, so you cannot assign the
+value of @dump to some variable. Note however that you can always define a
+function, just like the function $test, the sole purpose of which is to call a
+builtin. So essentially instead of passing around the value of @dump, you pass
+around the value of $test which calls @dump.
+
+</para><para>
+
+Function must always be called with the correct number of arguments. It is an
+error to use an incorrect number of arguments.
+
+</para>
+    </sect1>
     <!-- function data types, builtin wrappers -->
     <!-- deponly for additional dependencies -->
     <!-- @order and @wait -->
