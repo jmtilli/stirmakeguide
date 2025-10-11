@@ -6898,7 +6898,188 @@ the extra added dependency, with @deponly.
     </sect1>
     <sect1>
       <title>@order and @wait</title>
-      <!-- @order and @wait -->
+<para>
+
+There are two functionalities stolen from BSD make that control the parallel
+execution of rules. They are @wait and @order.
+
+</para><para>
+
+@wait is added as a specifier before a dependency. Whenever it is added, that
+dependency and anything after it will be executed by the rule only when
+everything before it has been executed. However, this execution order works
+only if the dependencies are not executed by some other rule that doesn't
+have @wait.
+
+</para><para>
+
+An example:
+
+<programlisting>
+@toplevel
+@strict
+
+@phonyrule: 'all': 'a' @wait 'b' @wait 'c' @wait 'd'
+@phonyrule: 'nowait': 'a' 'b' 'c' 'd'
+@phonyrule: 'two': 'a' 'b' @wait 'c' 'd'
+
+@phonyrule: 'a':
+        echo a
+@phonyrule: 'b':
+        echo b
+@phonyrule: 'c':
+        echo c
+@phonyrule: 'd':
+        echo d
+</programlisting>
+
+Then it can be observed that @wait does indeed what it's supposed to do:
+<programlisting>
+$ smka -ja
+stirmake: Using directory /home/YOURUSERNAME/wait
+[., a] sh -c echo a
+a
+[., b] sh -c echo b
+b
+[., c] sh -c echo c
+c
+[., d] sh -c echo d
+d
+$ smka -ja nowait
+stirmake: Using directory /home/YOURUSERNAME/wait
+[., d] sh -c echo d
+[., c] sh -c echo c
+[., b] sh -c echo b
+[., a] sh -c echo a
+c
+d
+b
+a
+$ smka -ja two
+stirmake: Using directory /home/YOURUSERNAME/wait
+[., b] sh -c echo b
+[., a] sh -c echo a
+b
+a
+[., d] sh -c echo d
+[., c] sh -c echo c
+d
+c
+</programlisting>
+
+</para><para>
+
+@order is a top-level construct taking two targets which ensures that if
+both targets are built, they are built in the specified order. However, it's
+not a real dependency since if the second target is built but the first is not,
+stirmake @order directive does not add a dependency from the second target to
+the first target.
+
+</para><para>
+
+An example:
+<programlisting>
+@toplevel
+@strict
+
+@phonyrule: 'nowait': 'a' 'b' 'a2' 'b2'
+
+@phonyrule: 'a':
+        echo a
+@phonyrule: 'b':
+        echo b
+@phonyrule: 'a2':
+        echo a2
+@phonyrule: 'b2':
+        echo b2
+
+@order 'b' 'a'
+@order 'a2' 'b2'
+</programlisting>
+
+If this is executed, it gives:
+</para><para>
+<programlisting>
+$ smka
+stirmake: Using directory /home/YOURUSERNAME/order
+[., a2] sh -c echo a2
+a2
+[., b2] sh -c echo b2
+b2
+[., b] sh -c echo b
+b
+[., a] sh -c echo a
+a
+</programlisting>
+
+However, if individual targets are executed separately, there is no rule
+that would make b2 dependent on a2 or a dependent on b:
+<programlisting>
+$ smka a
+stirmake: Using directory /home/YOURUSERNAME/order
+[., a] sh -c echo a
+a
+$ smka b
+stirmake: Using directory /home/YOURUSERNAME/order
+[., b] sh -c echo b
+b
+$ smka a2
+stirmake: Using directory /home/YOURUSERNAME/order
+[., a2] sh -c echo a2
+a2
+$ smka b2
+stirmake: Using directory /home/YOURUSERNAME/order
+[., b2] sh -c echo b2
+b2
+</programlisting>
+
+It is an error if there is circular @order
+<programlisting>
+@toplevel
+@strict
+
+@phonyrule: 'nowait': 'a' 'b' 'a2' 'b2'
+
+@phonyrule: 'a':
+        echo a
+@phonyrule: 'b':
+        echo b
+@phonyrule: 'a2':
+        echo a2
+@phonyrule: 'b2':
+        echo b2
+
+@order 'b' 'a'
+@order 'a' 'b'
+@order 'a2' 'b2'
+</programlisting>
+
+...but the error appears only if both targets are built:
+<programlisting>
+$ smka
+stirmake: Using directory /home/YOURUSERNAME/circularorder
+stirmake: cycle found
+ rule in cycle: ( nowait )
+ rule in cycle: ( a )
+ rule in cycle: ( b )
+stirmake: *** cycle found, cannot proceed further. Exiting.
+$ smka a
+stirmake: Using directory /home/YOURUSERNAME/circularorder
+[., a] sh -c echo a
+a
+$ smka b
+stirmake: Using directory /home/YOURUSERNAME/circularorder
+[., b] sh -c echo b
+b
+$ smka a b
+stirmake: Using directory /home/YOURUSERNAME/circularorder
+stirmake: cycle found
+ rule in cycle: ( a )
+ rule in cycle: ( b )
+stirmake: *** cycle found, cannot proceed further. Exiting.
+</programlisting>
+
+</para>
     </sect1>
     <sect1>
       <title>dynamically adding dependencies</title>
