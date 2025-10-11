@@ -6818,15 +6818,17 @@ Stirfile:
 @subfile
 @strict
 $SRCS = ["test.c"]
-$OBJS = @presuball(@sufsuball($SRCS, ".c", ".o"), "", @dirupall . "/build/" . @dirdownall . "/")
+$OBJS = @presuball(@sufsuball($SRCS, ".c", ".o"), "", @dirup . "/build/" . @dirdown . "/")
 $DEPS = @sufsuball($OBJS, ".o", ".d")
 
 @phonyrule: 'all': $OBJS
 
-(@dirupall . "/build/" . @dirdownall):
+(@dirup . "/build/" . @dirdown):
 @	["mkdir", "-p", $@]
 
-@patrule: $OBJS: (@dirupall . "/build/" . @dirdownall . "/%.o") (@dirupall . "/build/" . @dirdownall . "/%.d"): "%.c" @orderonly (@dirupall . "/build/" . @dirdownall)
+@patrule: $OBJS: (@dirup . "/build/" . @dirdown . "/%.o") \
+                 (@dirup . "/build/" . @dirdown . "/%.d"): \
+                     "%.c" @orderonly (@dirup . "/build/" . @dirdown)
 @	["cc", "-c", "-o", $@, $&lt;]
 @	["cc", "-MM", "-MT", $@, "-o", @sufsubone($@, ".o", ".d"), $&lt;]
 
