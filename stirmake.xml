@@ -6775,7 +6775,7 @@ $OBJS = @presuball(@sufsuball($SRCS, ".c", ".o"), "", "build/")
 
 This Stirfile compiles test.c into build/test.o, creating the directory if it
 doesn't exist. The command to create build directory is not executed again if
-the timestmap of the build directory changes. Also, if the timestamp of the
+the timestamp of the build directory changes. Also, if the timestamp of the
 build directory changes, no object file is rebuilt because it is an order-only
 dependency.
 
