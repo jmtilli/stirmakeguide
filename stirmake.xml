@@ -6783,7 +6783,6 @@ dependency.
     </sect1>
     <sect1>
       <title>Separate build directory</title>
-      <!-- build directory, @dirup/build/@dirdown not @dirupall / @dirdownall, @presuball -->
 <para>
 
 Usually stirmake is used to build the object and binary files and libraries to
@@ -6836,7 +6835,8 @@ $DEPS = @sufsuball($OBJS, ".o", ".d")
 </programlisting>
 
 Note how the parentheses can be used to add entire expressions to give target
-and dependency names.
+and dependency names. Note also how @presuball was used with empty prefix to
+add a string prefix to all array entries.
 
 </para>
     </sect1>
