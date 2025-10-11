@@ -7204,6 +7204,13 @@ and "wait". All of the settings have to be booleans.
 
 </para><para>
 
+Note that "rec", "orderonly" and "wait" are applied to all dependencies. If
+you wish to add a dependency with different settings than other dependencies,
+you have to call @adddeps several times with differing "rec", "orderonly" and
+"wait" settings.
+
+</para><para>
+
 An example is this snippet from stirmake Stirfile, which adds dependencies for
 flex/byacc:
 
