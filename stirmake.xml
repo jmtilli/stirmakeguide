@@ -7185,12 +7185,53 @@ stirmake: *** cycle found, cannot proceed further. Exiting.
 </para>
     </sect1>
     <sect1>
-      <title>dynamically adding dependencies</title>
-      <!-- dynamically adding dependencies -->
+      <title>Dynamically adding dependencies</title>
+<para>
+
+There is a tool @adddeps which can be used to add dependencies in Amyplan code.
+Note that dependency addition is not permitted after the rule into which
+dependencies are added has been executed. Dependency addition however is
+permitted at the time when rules are being executed, but the rule into which
+dependencies are added has not yet been executed or been scheduled for
+execution.
+
+</para><para>
+
+The tool to add dependencies takes first the targets used to identify the
+rules into which dependencies are added, secondly the dependencies themselves
+and thirdly a settings tree. The settings tree can contain "rec", "orderonly"
+and "wait". All of the settings have to be booleans.
+
+</para><para>
+
+An example is this snippet from stirmake Stirfile, which adds dependencies for
+flex/byacc:
+
+<programlisting>
+@function $ADD_LEXX_YACC_DEPS($lex)
+  @locvar $b = @sufsuball($lex, ".l", "")
+  @locvar $i = 0
+  @locvar $c = @nil
+  @for($i = 0, $i &lt; $b[], $i = $i+1)
+    $c = $b[$i]
+    @adddeps([$c.".lex.d", $c.".lex.o", $c.".tab.d", $c.".tab.o"], \
+             [$c.".lex.h", $c.".tab.h"], {})
+  @endfor
+@endfunction
+@call $ADD_LEXX_YACC_DEPS($(LEX_LIB))
+</programlisting>
+
+Here the "rec", "orderonly" and "wait" are default, i.e. false. Also here the
+function is executed during parsing stage with @call. A function can be
+executed after parsing stage if it's called when generating the command names
+and arguments, and in this case it's important that the targets have not been
+executed or scheduled for execution.
+
+</para>
     </sect1>
     <sect1>
-      <title>dynamically adding rules</title>
-      <!-- dynamically adding rules -->
+      <title>Dynamically adding rules</title>
+      <!-- Dynamically adding rules -->
     </sect1>
 
     <sect1>
