@@ -6836,8 +6836,6 @@ $DEPS = @sufsuball($OBJS, ".o", ".d")
 Note how the parentheses can be used to add entire expressions to give target
 and dependency names.
 
-<!-- FIXME smka -bc does not work here with this build directory -->
-
 </para>
     </sect1>
     <sect1>
