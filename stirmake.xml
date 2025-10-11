@@ -6842,8 +6842,56 @@ and dependency names.
     </sect1>
     <sect1>
       <title>Pattern rules</title>
-      <!-- pattern rules, TODO perhaps earlier? -->
-      <!-- sufsuball, possibility to construct a string inside parentheses -->
+<para>
+
+Pattern rules have been mentioned numerous times in the examples of this
+stirmake guide. However, it is important here to document their semantics.
+
+</para><para>
+
+Firstly, pattern rules always have to have a list of bases to instantiate them.
+Bases are compared to the first pattern in the target list. The first pattern
+in the target list must contain exactly one percent sign, which is treated as a
+wildcard. The second and further targets in the target list must also contain
+exatly one percent sign, but the difference is that the contents of the percent
+sign are taken from its use as a wildcard in the first target.
+
+</para><para>
+
+Dependencies may or may not have the wildcard. If a dependency has the
+wildcard, it must have exactly one of it, too, but having zero is permitted.
+
+</para><para>
+
+Patrule may also be a distrule, which can be noted in this example snippet
+of stirmake Stirfile:
+
+<programlisting>
+@patrule @distrule: $(PROG): '%': '%.o' 'libstirmake.a' 'abce/libabce.a'
+@	[@$(CC), @$(CFLAGS), "-o", $@, $&lt;, 'libstirmake.a', 'abce/libabce.a', @$(LUALIBS), '-lm', '-ldl']
+</programlisting>
+
+If a patrule is distrule, then it is cleaned along with binaries (smka -b), in
+the default case it is cleaned along with object files (smka -c).
+
+</para><para>
+
+Expressions can be included in targets or dependencies with parentheses, as
+is evident from this example snippet from the previous section:
+
+<programlisting>
+@patrule: $OBJS: (@dirup . "/build/" . @dirdown . "/%.o") \
+                 (@dirup . "/build/" . @dirdown . "/%.d"): \
+                     "%.c" @orderonly (@dirup . "/build/" . @dirdown)
+@	["cc", "-c", "-o", $@, $&lt;]
+@	["cc", "-MM", "-MT", $@, "-o", @sufsubone($@, ".o", ".d"), $&lt;]
+</programlisting>
+
+Note that unlike GNU make which supports $* variable, here the second target
+with .d extension is modified by using @sufsubone for the first target. $@ is
+always the first target.
+
+</para>
     </sect1>
     <sect1>
       <title>Scopes stored in variables</title>
