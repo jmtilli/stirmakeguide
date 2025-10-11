@@ -7238,9 +7238,176 @@ executed or scheduled for execution.
     </sect1>
     <sect1>
       <title>Dynamically adding rules</title>
-      <!-- Dynamically adding rules -->
-    </sect1>
+<para>
 
+In the previous section, it was explained how additional dependencies can be
+added dynamically. In this section, the same dynamic addition is used for
+rules, which is far more complex (more different options etc.) and also cannot
+be done after the execution of rules has begun.
+
+</para><para>
+
+Adding rules only takes one huge structure, a tree. All of the options
+will be present in this tree. The tree can contain these keys:
+
+<itemizedlist mark="bullet">
+<listitem><para>"tgts" (array of trees) for targets</para>
+  <itemizedlist mark="square">
+    <listitem><para>"name" (string) for target name</para></listitem>
+    <listitem><para>"dist" (boolean) for specifying it's binary not object</para></listitem>
+  </itemizedlist>
+</listitem>
+<listitem><para>"deps" (array of trees) for dependencies</para>
+  <itemizedlist mark="square">
+    <listitem><para>"name" (string) for dependency name</para></listitem>
+    <listitem><para>"rec" (boolean) for @recdep dependency</para></listitem>
+    <listitem><para>"orderonly" (boolean) for @orderonly dependency</para></listitem>
+  </itemizedlist>
+</listitem>
+<listitem><para>"shells" (array of trees) for commands to execute</para>
+  <itemizedlist mark="square">
+    <listitem><para>"embed" (boolean) for telling it's array of arrays ("cmds") not array ("cmd")</para></listitem>
+    <listitem><para>"cmds" (array of arrays of string, for "embed") or "cmd" (array of string, for no "embed") for telling the command(s) to execute</para></listitem>
+    <listitem><para>"isfun" (boolean) for telling the command is function which needs to be called, returning the actual commands</para></listitem>
+    <listitem><para>"fun" (function) for telling the function that is called with the following argument (for "isfun")</para></listitem>
+    <listitem><para>"arg" (boolean) for telling the function needs to be called with this argument (for "isfun")</para></listitem>
+    <listitem><para>"ismake" (boolean) for @ismake command, a sub-GNU-make</para></listitem>
+    <listitem><para>"noecho" (boolean) for @noecho command, not to echo command when executing it</para></listitem>
+    <listitem><para>"ignore" (boolean) for @ignore command, where return value can be "false-y" (nonzero)</para></listitem>
+    <listitem><para>"rec" (boolean) for @recdep dependency</para></listitem>
+    <listitem><para>"orderonly" (boolean) for @orderonly dependency</para></listitem>
+  </itemizedlist>
+</listitem>
+<listitem><para>"attrs" (tree) for attributes</para>
+  <itemizedlist mark="square">
+    <listitem><para>"phony" (boolean) for @phonyrule rules</para></listitem>
+    <listitem><para>"rectgt" (boolean) for @rectgtrule rules</para></listitem>
+    <listitem><para>"detouch" (boolean) for @detouchrule rules</para></listitem>
+    <listitem><para>"maybe" (boolean) for @mayberule rules</para></listitem>
+    <listitem><para>"dist" (boolean) for @distrule rules</para></listitem>
+    <listitem><para>"deponly" (boolean) for @deponly rules (but in this case you may want to use @adddeps instead)</para></listitem>
+    <listitem><para>"iscleanhook" (boolean) for clean hooks for object files, to be executed with -c argument</para></listitem>
+    <listitem><para>"isdistcleanhook" (boolean) for distclean hooks for binary files, to be executed with -b argument</para></listitem>
+    <listitem><para>"isbothcleanhook" (boolean) for bothclean hooks for object and binary files, to be executed with -bc argument</para></listitem>
+  </itemizedlist>
+</listitem>
+</itemizedlist>
+
+</para><para>
+
+Here's an example of dynamically adding rules, from fastdiv Stirfile:
+
+<programlisting>
+@function $LIST_TO_DICTS_SIMPLE($list, $param)
+  @locvar $i=0
+  @locvar $dicts=[]
+  @for($i=0,$i&lt;$list[],$i=$i+1)
+    @append($dicts, {$param: $list[$i]})
+  @endfor
+  @return $dicts
+@endfunction
+
+@function $MODULE($lib, $src_lib, $src_prog, $libs, $unitdeps, $unitcmds)
+  @locvar $src = [@$src_lib, @$src_prog]
+  @locvar $obj_lib = @sufsuball($src_lib, ".c", ".o")
+  @locvar $obj_prog = @sufsuball($src_prog, ".c", ".o")
+  @locvar $obj = @sufsuball($src, ".c", ".o")
+  @locvar $dep = @sufsuball($src, ".c", ".d")
+  @locvar $prog = @sufsuball($src_prog, ".c", "")
+  @locvar $alldeps = [@$prog, $lib]
+  @locvar $i = 0
+  @addrule({"tgts": [{"name": "all"}], "attrs": {"phony": @true}, \
+            "deps": @L$LIST_TO_DICTS_SIMPLE($alldeps, "name")})
+  @addrule({"tgts": [{"name": "unit"}], "attrs": {"phony": @true}, \
+            "deps": @L$LIST_TO_DICTS_SIMPLE($unitdeps, "name"), \
+            "shells": [{"embed": @true, "cmds": $unitcmds}]})
+  @for($i=0,$i&lt;$obj[],$i=$i+1)
+    @addrule({"tgts": [{"name": $obj[$i]}], \
+              "deps": [{"name": $src[$i]}, {"name": $dep[$i]}], \
+              "shells": [{"cmd": [ \
+                          @D$(CC), @@D$(CFLAGS), "-c", "-o", $obj[$i], \
+                          $src[$i]]}]})
+    @addrule({"tgts": [{"name": $dep[$i]}], \
+              "deps": [{"name": $src[$i]}], \
+              "shells": [{"cmd": [ \
+                          @D$(CC), @@D$(CFLAGS), "-M", "-o", $dep[$i], \
+                          $src[$i]]}]})
+  @endfor
+  @for($i=0,$i&lt;$prog[],$i=$i+1)
+    @addrule({"tgts": [{"name": $prog[$i]}], \
+              "deps": [{"name": $obj_prog[$i]}, \
+                       {"name": $lib}, \
+                       @@L$LIST_TO_DICTS_SIMPLE($libs, "name")], \
+              "shells": [{"cmd": [ \
+                          @D$(CC), @@D$(CFLAGS), "-o", $prog[$i], \
+                          $obj_prog[$i], $lib, @$libs, @@D$(LDFLAGS), \
+                          "-lpthread", "-ldl"]}]})
+  @endfor
+  @addrule({"tgts": [{"name": $lib}], \
+            "deps": @L$LIST_TO_DICTS_SIMPLE($obj_lib, "name"), \
+            "shells": [{"embed": @true, "cmds": [ \
+                        ["rm", "-f", $lib], \
+                        ["ar", "rvs", $lib, @$obj_lib]]}]})
+@endfunction
+
+</programlisting>
+
+Note how the library target (last rule) and how the unit testing target (second
+rule) use "embed" which is @true, and in every other rule it's omitted which
+means @false default.
+
+</para><para>
+
+...and here is a call to $MODULE to actually use it to create a library:
+<programlisting>
+@subfile
+@strict
+
+# You can modify these
+$SRC_LIB = ["fastdivlib.c"]
+$SRC_PROG = []
+$LIB = "libfastdiv.a"
+$EXTRACFLAGS = []
+$CFLAGS = [@$CFLAGS, @$EXTRACFLAGS]
+$LIBS = []
+$UNITDEPS = []
+$UNITCMDS = []
+
+# You won't want to modify anything below this line
+@call $MODULE($LIB, $SRC_LIB, $SRC_PROG, $LIBS, $UNITDEPS, $UNITCMDS)
+
+@cdepincludes @autophony @autotarget @ignore \
+  @sufsuball([@$SRC_PROG, @$SRC_LIB], ".c", ".d")
+</programlisting>
+
+...and here is a call to $MODULE to actually use it to create a binary linked
+to the library:
+
+<programlisting>
+@subfile
+@strict
+
+# You can modify these
+$SRC_LIB = []
+$SRC_PROG = ["main.c"]
+$LIB = "libexamples.a"
+$EXTRACFLAGS = ["-I../lib"]
+$CFLAGS = [@$CFLAGS, @$EXTRACFLAGS]
+$LIBS = ["../lib/libfastdiv.a"]
+$UNITDEPS = []
+$UNITCMDS = [["./main"]]
+
+# You won't want to modify anything below this line
+@call $MODULE($LIB, $SRC_LIB, $SRC_PROG, $LIBS, $UNITDEPS, $UNITCMDS)
+
+@cdepincludes @autophony @autotarget @ignore \
+  @sufsuball([@$SRC_PROG, @$SRC_LIB], ".c", ".d")
+</programlisting>
+
+Note how the $MODULE function removed a lot of boilerplate code.
+
+</para>
+    </sect1>
     <sect1>
       <title>Finding stirmake version and version history</title>
 <para>
