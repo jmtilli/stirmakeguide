@@ -7091,10 +7091,6 @@ stirmake: *** cycle found, cannot proceed further. Exiting.
     </sect1>
 
     <sect1>
-      <title>Version conditionals and minimum version requirements, future builtins</title>
-      <!-- version conditionals and minimum version requirements, future b-ins -->
-    </sect1>
-    <sect1>
       <title>Finding stirmake version and version history</title>
 <para>
 
@@ -7122,6 +7118,70 @@ entire git version history, you may run:
 <programlisting>
 stirmake -G
 </programlisting>
+
+</para>
+    </sect1>
+    <sect1>
+      <title>Version conditionals and minimum version requirements, future builtins</title>
+<para>
+
+Let us assume that you have stirmake version
+aa8c054fbf5c7d151f15bb4307fc6df8ca83e787 and that version of stirmake contains
+some fix or feature that is essential to the proper handling of your Stirfile.
+Then users of prior versions of stirmake try to build your project and fail.
+It would be useful to have a feature that clearly stops processing your
+Stirfile immediately with a message that tells at least version
+aa8c054fbf5c7d151f15bb4307fc6df8ca83e787 is required.
+
+</para><para>
+
+This feature is @version and works as follows:
+
+<programlisting>
+@toplevel
+@strict
+@version("aa8c054fbf5c7d151f15bb4307fc6df8ca83e787")
+@phonyrule: 'all':
+</programlisting>
+
+Executing it with the proper version or newer, prints:
+
+<programlisting>
+stirmake: Nothing to be done.
+</programlisting>
+
+...but with an old version, it prints:
+
+<programlisting>
+Incompatible version of stirmake installed, expected to contain git SHA1:
+aa8c054fbf5c7d151f15bb4307fc6df8ca83e787
+stirmake: *** Parsing failed. Exiting.
+</programlisting>
+
+Also @version can be used in top-level conditionals, where it does not cause an
+immediate failure, but rather executes the code inside them:
+
+<programlisting>
+@toplevel
+@strict
+
+@if(@version("ThisVersionDoesNotExist"))
+@call @dum
+@call @dum()
+@call @dum(5)
+@call @dum(5,6)
+@call @dum(5,6,7)
+@endif
+@if(@version("aa8c054fbf5c7d151f15bb4307fc6df8ca83e787"))
+@call @dump(6)
+@endif
+</programlisting>
+
+This Stirfile prints 6. Note how the @dum is not any supported built-in, but
+yet Stirmake did not fail when parsing that. The reason is that future
+built-ins that begin with @ but are not yet defined are parsed by a special
+rule that causes parsing failure if they are not inside a version conditional,
+but there is no parse error if inside version conditional that is false.
 
 </para>
     </sect1>
