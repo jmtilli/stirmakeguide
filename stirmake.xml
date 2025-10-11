@@ -6784,6 +6784,61 @@ dependency.
     <sect1>
       <title>Separate build directory</title>
       <!-- build directory, @dirup/build/@dirdown not @dirupall / @dirdownall, @presuball -->
+<para>
+
+Usually stirmake is used to build the object and binary files and libraries to
+the same directory where sources are. With make, a separate build directory is
+often used. The reasoning may be that with make, "make clean" is manually
+maintained and therefore the rules to clean may left an uncleaned mess.
+However,with stirmake cleaning rules are automatic so it's easy to do a full
+clean, if needed (with stirmake it's generally not needed whereas with make,
+"make clean" is the standard tool to debug build system issues).
+
+</para><para>
+
+Of course, stirmake supports separate build directory too. It can be beside the
+source files, or it can be a separate directory at the project root. The latter
+is achieved with @dirup and @dirdown (which are preferable to @dirupall and
+@dirdownall here since @dirup and @dirdown give paths relative to project root,
+whereas @dirupall and @dirdownall could create a path to entire project
+structure root which may be a different project).
+
+</para><para>
+
+How to do a separate build directory is presented here. First the top-level
+Stirfile:
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all': 'src/all'
+@dirinclude "src"
+</programlisting>
+...then the sub-Stirfile src/Stirfile:
+<programlisting>
+@subfile
+@strict
+$SRCS = ["test.c"]
+$OBJS = @presuball(@sufsuball($SRCS, ".c", ".o"), "", @dirupall . "/build/" . @dirdownall . "/")
+$DEPS = @sufsuball($OBJS, ".o", ".d")
+
+@phonyrule: 'all': $OBJS
+
+(@dirupall . "/build/" . @dirdownall):
+@	["mkdir", "-p", $@]
+
+@patrule: $OBJS: (@dirupall . "/build/" . @dirdownall . "/%.o") (@dirupall . "/build/" . @dirdownall . "/%.d"): "%.c" @orderonly (@dirupall . "/build/" . @dirdownall)
+@	["cc", "-c", "-o", $@, $&lt;]
+@	["cc", "-MM", "-MT", $@, "-o", @sufsubone($@, ".o", ".d"), $&lt;]
+
+@cdepincludes @ignore @autophony @autotarget $DEPS
+</programlisting>
+
+Note how the parentheses can be used to add entire expressions to give target
+and dependency names.
+
+<!-- FIXME smka -bc does not work here with this build directory -->
+
+</para>
     </sect1>
     <sect1>
       <title>Pattern rules</title>
