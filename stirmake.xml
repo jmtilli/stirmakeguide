@@ -7338,7 +7338,64 @@ but there is no parse error if inside version conditional that is false.
     </sect1>
     <sect1>
       <title>Hacking abce</title>
-      <!-- hacking abce: need for all to be visible to abce at all times -->
+<para>
+
+Stirmake uses abce as a sub-project to provide the built-in Amyplan programming
+language. The language has both reference counting and garbage collection. Now
+that garbage collection has been added to it, several precautions need to be
+taken. At every time a function which may result in garbage collection being
+called, is called, every object must be referenced from areas visible to the
+garbage collection. There is a secondary "C" stack in addition to the main
+stack to make this easier.
+
+</para><para>
+
+As an example, you don't create array with function abce_mb_create_array(abce)
+which would return a memblock, since that function would be dangerous. The
+result would contain a reference to something which is not visible to the abce
+engine and its garbage collector.
+
+</para><para>
+
+Instead, you create an array with function abce_mb_cpush_create_array(abce).
+It returns a memblock pointer, but most importantly, it adds the memblock to
+the top of the "C" stack. After you have used the result and no longer require
+a pointer to it, you call abce_cpop(abce) which removes it from the top of the
+"C" stack.
+
+</para><para>
+
+The memblocks can be either pointers to memblock (owned by something else, no
+reference count addition needed when accessing) or memblock itself via struct
+not pointer (owned by whatever data structure the memblock is in, holds a
+reference count). If accessing memblocks via structs not pointers, you need to
+always use abce_mb_refup to up-reference and abce_mb_refdown to down-reference.
+Note however that if the only reference to an object is held in an area not
+visible to garbage collection, the code is fragile and can crash in the garbage
+collector. Therefore, it is recommended to use pointer to a memblock in some
+data structure that is visible to the abce engine and its garbage collector.
+If there is no logical data structure to hold the reference, you should really
+consider adding the reference to the "C" stack.
+
+</para><para>
+
+Also you have to note that some of the Lex/Yacc code are duplicated between
+abce and stirmake, in a manner that is slightly different since the file
+stiryy.l contains two modes, INITIAL and STRICT, whereas amyplanyy.l does not.
+All features that have been added to amyplanyy.l and amyplanyy.y should be
+included to stiryy.l and stiryy.y too to keep them in sync.
+
+</para><para>
+
+If adding new opcodes to abce, it is important to note which type they are: an
+opcode relevant to the programming language itself, or an opcode that is only
+relevant when called from stirmake, controlling features of stirmake that are
+not present in abce. The former should be added to engine.c and abceopcodes.h
+and the latter to stirtrap.c and stiropcodes.h. Note that the custom opcodes
+reserved to stirmake and the standard opcodes reserved to abce have different
+numbers: abce is 0-63, stirmake 64-127, abce 128-1023 and stirmake 1024-2047.
+
+</para>
     </sect1>
   </chapter>
   </part>
