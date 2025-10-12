@@ -1782,6 +1782,29 @@ $DISCARD=@dump({"bar": {"baz": [567, 89]}})
 @call @dump($DISCARD)
 </programlisting>
 
+</para><para>
+
+If you want to print a string without quotes and without escape sequences for
+special characters like newlines, you can use @stdout or @stderr:
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+@call @stdout("Foo\nbar\n")
+@call @stderr("Baz\nbarf\n")
+</programlisting>
+
+Note that these tools do not add a newline, so if you print:
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+@call @stdout("Foo")
+@call @stdout("bar")
+@call @stdout("baz\n")
+</programlisting>
+...everything goes into a single line.
+
 </para>
 
     </sect1>
