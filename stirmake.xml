@@ -1902,7 +1902,7 @@ There are five special variables: $@, $&lt;, $^, $+ and $|.
 
 </para><para>
 
-Out of these, $@, $lt; and $^ are the most often used. $@ is the name of the
+Out of these, $@, $&lt; and $^ are the most often used. $@ is the name of the
 first target. $&lt; is the name of the first source. $^ is the names of all
 sources, with duplicates removed. $+ is the same as $^, but duplicate source
 files are repeated in the exact same order, which may be useful sometimes for
