@@ -6868,7 +6868,10 @@ add a string prefix to all array entries.
 <para>
 
 Pattern rules have been mentioned numerous times in the examples of this
-stirmake guide. However, it is important here to document their semantics.
+stirmake guide. However, it is important here to document their semantics.  The
+documented semantics are the semantics after git commit
+eac397e190032848ff8da30c348b86d6708233ae, and the semantics have recently
+changed.
 
 </para><para>
 
@@ -6899,6 +6902,66 @@ the default case it is cleaned along with object files (smka -c).
 
 </para><para>
 
+Note also that pattern rules may use variables and expressions as targets
+and dependencies. Example dependencies:
+<programlisting>
+$(LIBS) = ['libstirmake.a', 'abce/libabce.a']
+@patrule @distrule: $(PROG): '%': '%.o' $(LIBS)
+@	[@$(CC), @$(CFLAGS), "-o", $@, $&lt;, 'libstirmake.a', 'abce/libabce.a', @$(LUALIBS), '-lm', '-ldl']
+</programlisting>
+Here $(LIBS) is outside parentheses, so every member of $(LIBS) is scanned
+for '%' character and if one '%' character is present, it is filled with
+the material from the base filenames used as wildcard. It is also possible
+to have an arbitrary expression inside parentheses, which disable the
+special processing of the '%' sign, but only if the expression result is an
+array:
+<programlisting>
+$(LIBS) = ['libstirmakereallycontains%sign.a', 'abce/libabce.a']
+@patrule @distrule: $(PROG): '%': '%.o' ($(LIBS))
+@	[@$(CC), @$(CFLAGS), "-o", $@, $&lt;, 'libstirmake.a', 'abce/libabce.a', @$(LUALIBS), '-lm', '-ldl']
+</programlisting>
+...this also does not have the special '%' character meaning
+<programlisting>
+$(LIBS) = ['libstirmakereallycontains%sign.a']
+@patrule @distrule: $(PROG): '%': '%.o' ($(LIBS)) 'abce/libabce.a'
+@	[@$(CC), @$(CFLAGS), "-o", $@, $&lt;, 'libstirmake.a', 'abce/libabce.a', @$(LUALIBS), '-lm', '-ldl']
+</programlisting>
+...but this does, since every isolated string not in an array has special
+'%' character meaning:
+<programlisting>
+$(LIBS) = 'libstirmakereallycontains%sign.a'
+@patrule @distrule: $(PROG): '%': '%.o' ($(LIBS)) 'abce/libabce.a'
+@	[@$(CC), @$(CFLAGS), "-o", $@, $&lt;, 'libstirmake.a', 'abce/libabce.a', @$(LUALIBS), '-lm', '-ldl']
+</programlisting>
+Also note that inside the parentheses, any expression
+is valid so you can have:
+<programlisting>
+@patrule @distrule: $(PROG): '%': '%.o' (['libstirmake%.a', 'abce/libabce.a'])
+@	[@$(CC), @$(CFLAGS), "-o", $@, $&lt;, 'libstirmake.a', 'abce/libabce.a', @$(LUALIBS), '-lm', '-ldl']
+</programlisting>
+...and in this case, the percent sign is part of the dependency name too. So if
+you want to create dependency array programmatically, you have to decide
+whether it's outside parentheses (only direct variable reference allowed,
+special handling for % sign enabled), or inside parantheses (any expression
+allowed, special handling for % sign disabled except if the data type is
+single isolated string in which case special handling is enabled).
+
+</para><para>
+
+It is also possible to use an array with @nil, of length at most 3. In this
+case, the @nil is the wildcard, and you may or may not have string before the
+wildcard and after the wildcard. Example:
+<programlisting>
+@patrule @distrule: $(PROG): ([@nil]): ([@nil, '.o']) (['libstirmake%.a', 'abce/libabce.a'])
+@	[@$(CC), @$(CFLAGS), "-o", $@, $&lt;, 'libstirmake.a', 'abce/libabce.a', @$(LUALIBS), '-lm', '-ldl']
+</programlisting>
+...in this case the target is the basename extracted from $(PROG) members, and
+dependency is basename with '.o' appended to it. Note that there has to be
+exactly one @nil, and you may have one string before it and one after it at
+most.
+
+</para><para>
+
 Expressions can be included in targets or dependencies with parentheses, as
 is evident from this example snippet from the previous section:
 
@@ -6912,7 +6975,23 @@ is evident from this example snippet from the previous section:
 
 Note that unlike GNU make which supports $* variable, here the second target
 with .d extension is modified by using @sufsubone for the first target. $@ is
-always the first target.
+always the first target. Note also that even though the expression is inside
+parentheses, it is not an array, so special handling for '%' character is
+enabled.
+
+</para><para>
+
+The rules for how special handling of '%' character is enabled or disabled
+are quite complex. They are:
+<itemizedlist mark="bullet">
+<listitem><para>Every string has special meaning</para></listitem>
+<listitem><para>Everything outside parentheses has special meaning, string or variable reference to array</para></listitem>
+<listitem><para>String inside parentheses has special meaning, because every string has special meaning</para></listitem>
+<listitem><para>Array inside parentheses does not have special meaning</para></listitem>
+</itemizedlist>
+Note also that array has special meaning for @nil, which is the wildcard
+character intended for arrays. @nil in not a character that could be inside
+a string.
 
 </para>
     </sect1>
