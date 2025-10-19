@@ -4844,6 +4844,45 @@ argument).
 
 </para>
     </sect1>
+    <sect1>
+      <title>Pathnames</title>
+<para>
+
+Stirmake uses relative pathnames for practically everything. However, in some
+situation it might be helpful to convert a relative pathname into an absolute
+pathname. Support for it is provided via @abspath. Similarly, you may want to
+simplify a pathname but keep it relative, eliminating unneeded . and .. in the
+path, but keeping all symbolic links. This is possible via @pathsimplify.
+Basenames and suffixes can be extracted via @pathbasename and @pathsuffix. Note
+how the basename is defined as everything before the suffix, so it's different
+from C language basename() function call that includes the suffix too. In
+stirmake, @pathnotdir is similar to C language basename() if the string does
+not end in "/", but if it does, the result is empty string. Complementary to
+@pathnotdir, there is @pathdir which extracts the directory portion of the
+path. Some of these can be done for arrays: @pathsimplifyall, @pathdirall,
+@pathnotdirall, @pathbasenameall, @pathsuffixall.
+
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+@call @dump(@abspath(".")) # absolute pathname
+@call @dump(@pathsimplify("foo/../bar")) # bar
+@call @dump(@pathsimplifyall(["foo/../bar", "foo/./bar"])) # ["bar", "foo/bar"]
+@call @dump(@pathdir("foo/../bar")) # foo/../
+@call @dump(@pathdir("foo/../bar/")) # foo/../bar/
+@call @dump(@pathdirall(["foo/../bar", "foo/../bar/"])) # ["foo/../", "foo/../bar/"]
+@call @dump(@pathnotdir("foo/../bar")) # bar
+@call @dump(@pathnotdir("foo/../bar/")) # empty string ("")
+@call @dump(@pathnotdirall(["foo/../bar", "foo/../bar/"])) # ["bar", ""]
+@call @dump(@pathbasename("foo/../bar.c")) # *"foo/../bar"
+@call @dump(@pathbasenameall(["foo/../bar.c", "baz.c"])) # ["foo/../bar", "baz"]
+@call @dump(@pathsuffix("foo/../bar.c")) # ".c"
+@call @dump(@pathsuffixall(["foo/../bar.c", "bar.h"])) # [".c", ".h"]
+</programlisting>
+
+</para>
+    </sect1>
   </chapter>
   <chapter xml:id="examplelargeprojects">
     <title>Example large or complex projects</title>
