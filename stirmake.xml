@@ -3112,6 +3112,25 @@ not have any attempt at shell escaping to support for example dollar signs
 in file names. Stirmake's way to allow dollar signs in file names is to not use
 shell, but instead invoke the compiler directly with no shell inbetween.
 
+</para><para>
+
+Note also that arbitrary variables can be used in the shell command with syntax
+$(VARNAME) or $(@VARNAME).
+
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all': 'hello'
+$CC = "cc"
+$CFLAGS = ["-Wall", "-O3"]
+'hello': 'hello.c'
+	$(CC) $(@CFLAGS) -o $@ $&lt;
+</programlisting>
+
+In the case of array, embedding it requires the @ sign before the variable name
+inside parentheses. Variables outside parentheses (like $CC and $CFLAGS) are
+not supported. Two consecutive $ characters are sent as single $ to shell.
+
 </para>
     </sect1>
     <sect1>
