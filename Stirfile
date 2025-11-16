@@ -4,7 +4,7 @@
 'index.html': 'stirmake.xml'
 @	["xsltproc", "-o", "stirmake.html", "--stringparam", "chunk.section.depth", "0", "/usr/share/xml/docbook/stylesheet/nwalsh/xhtml/chunk.xsl", "stirmake.xml"]
 
-@phonyrule: 'publish':
+@phonyrule: 'publish': 'index.html'
 @	["cp", @@glob("*.html"), "jmtilli.github.io/stirmakeguide/"]
 @	["sh", "-c", "cd jmtilli.github.io/stirmakeguide && git pull"]
 @	["sh", "-c", "cd jmtilli.github.io/stirmakeguide && git add *.html"]
