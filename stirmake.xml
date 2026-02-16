@@ -1911,7 +1911,7 @@ of all order-only dependencies.
 
 </para><para>
 
-Out of these, $@ and$&lt; are strings and the others are arrays of strings.
+Out of these, $@ and $&lt; are strings and the others are arrays of strings.
 
 </para>
 
