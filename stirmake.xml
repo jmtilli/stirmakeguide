@@ -2056,6 +2056,23 @@ you can define:
 7e548edc5aa47312a1c517503947aa02e5e20329. Note that git version numbering is
 used here, so the version number is a SHA-1 hash.
 
+A useful trick is to check for the existence of a file with @access:
+
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+
+@if(@access("file.txt", "f"))
+@deponly: 'all': 'specialrule'
+@phonyrule: 'specialrule':
+@	["echo", "file.txt exists"]
+@endif
+</programlisting>
+
+Here the mode "f" checks for existence of file. Alternative modes are "r"
+(readable), "w" (writeable) and "x" (executable).
+
 </para>
 
     </sect1>
