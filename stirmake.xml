@@ -6690,7 +6690,9 @@ writes JSON into a file
 </programlisting>
 
 Here the supported file modes are the same that fopen in C supports: r, r+, w,
-w+, a, a+, rb, r+b, wb, w+b, ab, a+b.
+w+, a, a+, rb, r+b, wb, w+b, ab, a+b. If the file could not be opened, @fopen
+returns @nil which causes the program to halt execution due to an error when
+I/O is performed on the non-opened file.
 
 </para><para>
 
@@ -6702,8 +6704,13 @@ The following code reads the JSON back:
 @function $main($argv,$env)
   @locvar $f = @fopen("json.txt", "r")
   @locvar $pb = @pbnew()
+  @if(@type($f) == @type(@nil))
+    @dump("json.txt nonexistent")
+    @return 1
+  @endif
   @dump(@fgetdelim($f, @nil, $pb, 0, @nil))
   @dump(@pb2str($pb, 0, $pb{@}))
+  @dump(@jsontest(@pb2str($pb, 0, $pb{@})))
   @dump(@jsondec(@pb2str($pb, 0, $pb{@})))
   @return 0
 @endfunction
@@ -6730,6 +6737,7 @@ counting to destroy it), but it is possible to close it earlier with @fclose:
   @dump(@fgetdelim($f, @nil, $pb, 0, @nil))
   @fclose($f)
   @dump(@pb2str($pb, 0, $pb{@}))
+  @dump(@jsontest(@pb2str($pb, 0, $pb{@})))
   @dump(@jsondec(@pb2str($pb, 0, $pb{@})))
   @return 0
 @endfunction
@@ -6755,6 +6763,7 @@ of @fread:
   $pb{@} = $bytes_read
   @fclose($f)
   @dump(@pb2str($pb, 0, $pb{@}))
+  @dump(@jsontest(@pb2str($pb, 0, $pb{@})))
   @dump(@jsondec(@pb2str($pb, 0, $pb{@})))
   @return 0
 @endfunction
@@ -6842,9 +6851,9 @@ It is also possible to classify numbers using @fpclassify:
       <title>JSON</title>
 <para>
 
-Thanks to the typing system of Amyplan, supporting JSON is easy. There are two
-functions, @jsondec and @jsonenc. Note that the JSON is represented as a
-string, not as a packet buffer.
+Thanks to the typing system of Amyplan, supporting JSON is easy. There are
+three functions, @jsontest, @jsondec and @jsonenc. Note that the JSON is
+represented as a string, not as a packet buffer.
 
 </para><para>
 
@@ -6872,10 +6881,15 @@ It is also possible to decode JSON:
 
 @function $main($argv,$env)
   @locvar $json = '{"a": [1,2,3], "b": null, "c": false, "d": "string"}'
+  @dump(@jsontest($json))
   @dump(@jsondec($json))
   @return 0
 @endfunction
 </programlisting>
+
+The builtin @jsontest checks whether the JSON is valid, returning @false or
+@true. Note that if the JSON is invalid, calling @jsondec for it will halt the
+program due to an error.
 
 </para>
     </sect1>
