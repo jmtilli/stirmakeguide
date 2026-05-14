@@ -860,7 +860,7 @@ if the operating system does not have a ready-made package for it.
 
 </para><para>
 
-You also need GNU make to bootstrap stirmake, and the essential build tools
+You also need Bourne shell to bootstrap stirmake, and the essential build tools
 like C compiler and linker.
 
 </para><para>
@@ -885,7 +885,42 @@ install stirmake:
 <programlisting>
 git clone --recursive https://github.com/Aalto5G/stirmake
 cd stirmake/stirc
-make
+./bootstrapnomake.sh
+</programlisting>
+
+</para><para>
+
+The used tools (default flex, byacc, cc) can be specified in environment:
+
+<programlisting>
+FLEX=flex BYACC=bison CC=clang ./bootstrapnomake.sh
+</programlisting>
+
+</para><para>
+
+Also if you have LuaJIT installed, you may enable optional Lua support:
+
+<programlisting>
+STIR_WITH_LUA=1 ./bootstrapnomake.sh
+</programlisting>
+
+</para><para>
+
+If the Lua is something else than LuaJIT (e.g. the official Lua), you have to
+specify C flags and libraries separately:
+
+<programlisting>
+export STIR_LUAINCS="$(pkg-config --cflags lua5.3)"
+export STIR_LUALIBS="$(pkg-config --libs lua5.3)"
+export STIR_WITH_LUA=1
+./bootstrapnomake.sh
+</programlisting>
+
+</para><para>
+
+Then, to install it:
+
+<programlisting>
 ./install.sh
 </programlisting>
 
@@ -897,7 +932,7 @@ re-log-in. Globally installing stirmake to /usr/local would happen as follows,
 assuming it's already cloned:
 <programlisting>
 cd stirmake/stirc
-make
+./bootstrapnomake.sh
 sudo ./install.sh /usr/local
 sudo mandb
 </programlisting>
@@ -920,15 +955,6 @@ All of the commands to invoke stirmake should print something like this:
 <programlisting>
 stirmake: Using directory /home/YOURUSERNAME/stirmaketry
 stirmake: *** Stirfile not found. Exiting.
-</programlisting>
-
-</para><para>
-
-They should also leave a .stir.db file containing just two lines out of which
-the second is empty:
-<programlisting>
-@v2@
-
 </programlisting>
 
 </para><para>
