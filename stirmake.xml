@@ -7801,6 +7801,189 @@ but there is no parse error if inside version conditional that is false.
 </para>
     </sect1>
     <sect1>
+      <title>Lua integration</title>
+<para>
+
+As explained earlier, stirmake may optionally be compiled with Lua support:
+with official Lua or with LuaJIT. If Lua support is compiled in, Lua code
+can be embedded to stirfiles as follows:
+
+<programlisting>
+@toplevel
+@strict
+
+@phonyrule: 'all':
+
+%lua{
+
+function fibonacci(x)
+  if x &lt; 1 then
+    return 1
+  end
+  return fibonacci(x-1) + fibonacci(x-2)
+end
+
+%}
+
+@call @dump(@dynluacall("fibonacci", 5))
+</programlisting>
+
+</para><para>
+
+Note that @dynluacall calls Lua using the dynamic scope, which in this case is
+equivalent to lexical scope. However, if you define an Amyplan function in
+scope A, call it from scope B, and the Amyplan function calls Lua, then a
+dynamic call to Lua from that Amyplan function would use scope B and a lexical
+call would use scope A. The lexical call would be made with @lexluacall.
+
+</para><para>
+
+Lua can get and set variables, dynamically or lexically. Example of getting
+variables:
+
+<programlisting>
+@toplevel
+@strict
+
+@phonyrule: 'all':
+
+$A = 1
+
+%lua{
+function luafun(varname)
+  print(Abce.getlexval(varname))
+  print(Abce.getdynval(varname))
+end
+%}
+
+@function $AMYPLANFUN()
+  @lexluacall("luafun", "A")
+@endfunction
+
+@beginscope
+$A = 2
+@call $AMYPLANFUN()
+@endscope
+</programlisting>
+
+This Stirfile prints first 1 and then 2, if Lua support is compiled in. Note
+that since Lua lacks recursive nested scoping, the only way to call the Lua
+function from the sub-scope is to call an Amyplan function that is in the
+parent scope, and the Amyplan function then calls the Lua function. Lua in the
+child scope does not see Lua definitions made in the parent scope. Note that
+some older Stirmake versions require at least one argument to Lua functions,
+but most recent code supports zero arguments too.
+
+</para><para>
+
+It is also possible to set variables from Lua:
+
+<programlisting>
+@toplevel
+@strict
+
+@phonyrule: 'all':
+
+$A = @nil
+
+%lua{
+function luafun(varname)
+  print(Abce.setlexval(varname, "LEX"))
+  print(Abce.setdynval(varname, "DYN"))
+end
+%}
+
+@function $AMYPLANFUN()
+  @lexluacall("luafun", "A")
+@endfunction
+
+@beginscope
+$A = @nil
+@call $AMYPLANFUN()
+@call @dump($A)
+@call @dump(@LP$A)
+@endscope
+</programlisting>
+
+This program prints first LEX and then DYN.
+
+</para><para>
+
+Lua can call Amyplan functions:
+
+<programlisting>
+@toplevel
+@strict
+
+@phonyrule: 'all':
+
+@function $AMYPLANDUMP($x)
+  @dump($x)
+  @return [1,2,3]
+@endfunction
+
+%lua{
+function luafun(dummy)
+  local res=Abce.makelexcall("AMYPLANDUMP", {1,2,{a=3, b=4}})
+  print(res[2])
+end
+%}
+
+@call @dynluacall("luafun", @nil)
+</programlisting>
+
+This program prints first [1, 2, {"a": 3, "b": 4}] and then 2. Note that to
+call an Amyplan function not in the lexical scope but in the dynamic scope, you
+would use Abce.makedyncall.
+
+</para><para>
+
+Lua cannot add rules or dependencies directly, but since Lua can call
+Amyplan functions, you can always define Amyplan wrappers that allow
+programmatically adding rules or dependencies from Lua. How to do that:
+
+<programlisting>
+@toplevel
+@strict
+
+@phonyrule: 'all':
+@phonyrule: 'echo':
+@	["echo", "foo"]
+
+@function $LUADEP($tgts, $deps, $opts)
+  @if((@type($opts)==@type([])) &amp;&amp; ($opts[]==0))
+    $opts={}
+  @endif
+  @adddeps($tgts, $deps, $opts)
+@endfunction
+
+%lua{
+function luafun(dummy)
+  Abce.makelexcall("LUADEP", {"all"}, {"echo"}, {})
+end
+%}
+
+@call @dynluacall("luafun", @nil)
+</programlisting>
+
+Note how in Lua the empty array and dictionary are the same, so Stirmake has to
+make a choice to convert it to an array or to a dictionary, and it made the
+choice to convert it to an empty array. In the case of the third $opts
+argument, the choice was incorrect, so the $LUADEP function needs to check for
+its argument being an empty array, and if so, replace it with an empty
+dictionary instead.
+
+</para><para>
+
+Adding rules from Lua is similar: you would define $LUARULE Amyplan function
+which calls @addrule. Then Lua can call the $LUARULE function and add rules via
+it. Note again that an empty dictionary is converted to an empty array, which
+could cause problems and may need to be solved separately in the $LUARULE
+function.
+
+</para>
+    </sect1>
+    <sect1>
       <title>Hacking abce</title>
 <para>
 
