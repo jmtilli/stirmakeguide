@@ -2060,7 +2060,7 @@ subtraction, multiplication, modulo and bitwise operations of two integers
 would provide an integer provided that it does not overflow, whereas division
 would provide a floating-point number. Truncation, rounding, floor and ceil
 would provide an integer too provided that the result is not too large in
-magnitude. Most builtins related to indexing and lenghts would only return
+magnitude. Most builtins related to indexing and lengths would only return
 integers, but would accept floating-point numbers with zero fractional part in
 addition to integers too.
 
