@@ -2030,6 +2030,40 @@ from the packet buffer. The @str2pb always takes the entire string, but <link
 linkend="string">strings can be sliced with @strsub</link> if needed, and then
 converted to a packet buffer with @str2pb of the sliced string.
 
+</para><para>
+
+Note that there is a plan to change the type identifier of floating-point
+numbers and integers to be different. For your code to work correctly both
+before and after this change, you should compare the type of your object
+to both the type of an integer and a floating-point number to determine if it
+is a number:
+
+<programlisting>
+@toplevel
+@strict
+@phonyrule: 'all':
+
+@function $ISNUM($x)
+  @return @type($x) == @type(0) || @type($x) == @type(0.0)
+@endfunction
+
+@call @dump($ISNUM(@nil))
+@call @dump($ISNUM(123))
+@call @dump($ISNUM(123.0))
+@call @dump($ISNUM(123.05))
+</programlisting>
+
+This code will work in all past and future versions of Stirmake and correctly
+determines whether the argument is a number. The plan is that 0 and 123 are
+integers, and 0.0, 123.0 and 123.05 are floating-point numbers. Addition,
+subtraction, multiplication, modulo and bitwise operations of two integers
+would provide an integer provided that it does not overflow, whereas division
+would provide a floating-point number. Truncation, rounding, floor and ceil
+would provide an integer too provided that the result is not too large in
+magnitude. Most builtins related to indexing and lenghts would only return
+integers, but would accept floating-point numbers with zero fractional part in
+addition to integers too.
+
 </para>
 
     </sect1>
