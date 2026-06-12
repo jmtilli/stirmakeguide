@@ -8015,6 +8015,89 @@ it. Note again that an empty dictionary is converted to an empty array, which
 could cause problems and may need to be solved separately in the $LUARULE
 function.
 
+</para><para>
+
+Newer versions of stirmake support direct addition of rules and dependencies
+from Lua without needing intermediate Amyplan language functions. It
+works as follows:
+<programlisting>
+@toplevel
+@strict
+
+@phonyrule: 'reallyall': 'all'
+
+@phonyrule: 'test':
+	echo OK
+
+%lua{
+  Stir.addrule({tgts={{name="all"}}, attrs={phony=true}})
+  Stir.adddep({"reallyall"}, {"test"}, {})
+%}
+</programlisting>
+
+</para><para>
+
+Note that since Lua does not support recursive nested scoping, to define a Lua
+function in the top-level directory and to use it from a subfile is impossible.
+However, you can have inc.lua file in the top level directory and include it in
+the subdirectory, and define the functions in the inc.lua file. How that
+works:
+
+</para><para>
+
+Stirfile:
+<programlisting>
+@toplevel
+@strict
+
+@phonyrule: 'all':
+
+@function $AMYPLANDUMP($x)
+  @dump($x)
+  @return [1,2,3]
+@endfunction
+
+@projdirinclude "subdir"
+</programlisting>
+
+</para><para>
+
+subdir/Stirfile:
+<programlisting>
+@toplevel
+@strict
+
+@phonyrule: 'all':
+
+%lua{
+require(Stir.dirupall() .. "/inc")
+function luafun2(dummy)
+  luafun(dummy)
+end
+%}
+
+@call @dynluacall("luafun2", @nil)
+</programlisting>
+
+</para><para>
+
+inc.lua:
+<programlisting>
+function luafun(dummy)
+  local res=Abce.makelexcall("AMYPLANDUMP", {1,2,{a=3, b=4}})
+  print(res[2])
+end
+</programlisting>
+
+</para><para>
+
+Note how Stir.dirupall() was used to get the top-level directory. Similarly,
+there is Stir.dirdownall() to get to the subdirectory from the top-level
+directory. Also, for getting the project (not the project hierarchy) top, you
+can use Stir.dirup() and to get from the project top to the subdirectory, there
+is Stir.dirdown(). Note that these features work only in very recent Stirmake
+versions.
+
 </para>
     </sect1>
     <sect1>
