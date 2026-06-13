@@ -7206,7 +7206,8 @@ Note that unlike GNU make which supports $* variable, here the second target
 with .d extension is modified by using @sufsubone for the first target. $@ is
 always the first target. Note also that even though the expression is inside
 parentheses, it is not an array, so special handling for '%' character is
-enabled.
+enabled. Newer versions of stirmake support the $* variable, but using
+@sufsubone and $@ is recommended to support old stirmake versions too.
 
 </para><para>
 
